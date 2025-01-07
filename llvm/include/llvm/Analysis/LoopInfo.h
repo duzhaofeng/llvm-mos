@@ -14,15 +14,10 @@
 #define LLVM_ANALYSIS_LOOPINFO_H
 
 #include "llvm/ADT/GraphTraits.h"
-#include "llvm/ADT/SmallVector.h"
-#include "llvm/IR/CFG.h"
 #include "llvm/IR/Instructions.h"
-#include "llvm/IR/IntrinsicInst.h"
 #include "llvm/IR/PassManager.h"
-#include "llvm/IR/ValueHandle.h"
 #include "llvm/Pass.h"
 #include "llvm/Support/GenericLoopInfo.h"
-#include <algorithm>
 #include <optional>
 #include <utility>
 
@@ -30,10 +25,8 @@ namespace llvm {
 
 class DominatorTree;
 class InductionDescriptor;
-class Instruction;
 class LoopInfo;
 class Loop;
-class MDNode;
 class MemorySSAUpdater;
 class ScalarEvolution;
 class raw_ostream;
@@ -43,7 +36,7 @@ extern template class LoopBase<BasicBlock, Loop>;
 
 /// Represents a single loop in the control flow graph.  Note that not all SCCs
 /// in the CFG are necessarily loops.
-class LLVM_EXTERNAL_VISIBILITY Loop : public LoopBase<BasicBlock, Loop> {
+class LLVM_ABI Loop : public LoopBase<BasicBlock, Loop> {
 public:
   /// A range representing the start and end location of a loop.
   class LocRange {
@@ -387,27 +380,16 @@ public:
   /// Return the source code span of the loop.
   LocRange getLocRange() const;
 
+  /// Return a string containing the debug location of the loop (file name +
+  /// line number if present, otherwise module name). Meant to be used for debug
+  /// printing within LLVM_DEBUG.
+  std::string getLocStr() const;
+
   StringRef getName() const {
     if (BasicBlock *Header = getHeader())
       if (Header->hasName())
         return Header->getName();
     return "<unnamed loop>";
-  }
-
-  /// Preserve the induction variable exit value and its debug users by the
-  /// 'indvars' pass if the loop can deleted. Those debug users will be used
-  /// by the 'loop-delete' pass.
-  void preserveDebugInductionVariableInfo(
-      Value *FinalValue,
-      const SmallVectorImpl<DbgVariableIntrinsic *> &DbgUsers) {
-    IndVarFinalValue = FinalValue;
-    for (auto &DebugUser : DbgUsers)
-      IndVarDebugUsers.push_back(DebugUser);
-  }
-
-  Value *getDebugInductionVariableFinalValue() { return IndVarFinalValue; }
-  SmallVector<WeakVH> &getDebugInductionVariableDebugUsers() {
-    return IndVarDebugUsers;
   }
 
 private:
@@ -417,13 +399,6 @@ private:
   friend class LoopBase<BasicBlock, Loop>;
   explicit Loop(BasicBlock *BB) : LoopBase<BasicBlock, Loop>(BB) {}
   ~Loop() = default;
-
-  // Induction variable exit value and its debug users, preserved by the
-  // 'indvars' pass, when it detects that the loop can be deleted and the
-  // there are no PHIs to be rewritten.
-  // For now, we only preserve single induction variables.
-  Value *IndVarFinalValue = nullptr;
-  SmallVector<WeakVH> IndVarDebugUsers;
 };
 
 // Implementation in Support/GenericLoopInfoImpl.h
@@ -674,6 +649,9 @@ int getIntLoopAttribute(const Loop *TheLoop, StringRef Name, int Default = 0);
 std::optional<const MDOperand *> findStringMetadataForLoop(const Loop *TheLoop,
                                                            StringRef Name);
 
+/// Find the convergence heart of the loop.
+CallBase *getLoopConvergenceHeart(const Loop *TheLoop);
+
 /// Look for the loop attribute that requires progress within the loop.
 /// Note: Most consumers probably want "isMustProgress" which checks
 /// the containing function attribute too.
@@ -715,7 +693,6 @@ llvm::MDNode *
 makePostTransformationMetadata(llvm::LLVMContext &Context, MDNode *OrigLoopID,
                                llvm::ArrayRef<llvm::StringRef> RemovePrefixes,
                                llvm::ArrayRef<llvm::MDNode *> AddAttrs);
-
 } // namespace llvm
 
 #endif

@@ -21,7 +21,6 @@
 #include "llvm/ADT/SmallPtrSet.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/Statistic.h"
-#include "llvm/Analysis/AliasAnalysis.h"
 #include "llvm/CodeGen/LiveInterval.h"
 #include "llvm/CodeGen/LiveIntervals.h"
 #include "llvm/CodeGen/LiveRangeEdit.h"
@@ -134,12 +133,13 @@ class HoistSpillHelper : private LiveRangeEdit::Delegate {
 public:
   HoistSpillHelper(MachineFunctionPass &pass, MachineFunction &mf,
                    VirtRegMap &vrm)
-      : MF(mf), LIS(pass.getAnalysis<LiveIntervals>()),
-        LSS(pass.getAnalysis<LiveStacks>()),
-        MDT(pass.getAnalysis<MachineDominatorTree>()), VRM(vrm),
-        MRI(mf.getRegInfo()), TII(*mf.getSubtarget().getInstrInfo()),
+      : MF(mf), LIS(pass.getAnalysis<LiveIntervalsWrapperPass>().getLIS()),
+        LSS(pass.getAnalysis<LiveStacksWrapperLegacy>().getLS()),
+        MDT(pass.getAnalysis<MachineDominatorTreeWrapperPass>().getDomTree()),
+        VRM(vrm), MRI(mf.getRegInfo()), TII(*mf.getSubtarget().getInstrInfo()),
         TRI(*mf.getSubtarget().getRegisterInfo()),
-        MBFI(pass.getAnalysis<MachineBlockFrequencyInfo>()),
+        MBFI(
+            pass.getAnalysis<MachineBlockFrequencyInfoWrapperPass>().getMBFI()),
         IPA(LIS, mf.getNumBlockIDs()) {}
 
   void addToMergeableSpills(MachineInstr &Spill, int StackSlot,
@@ -169,6 +169,10 @@ class InlineSpiller : public Spiller {
   // All registers to spill to StackSlot, including the main register.
   SmallVector<Register, 8> RegsToSpill;
 
+  // All registers that were replaced by the spiller through some other method,
+  // e.g. rematerialization.
+  SmallVector<Register, 8> RegsReplaced;
+
   // All COPY instructions to/from snippets.
   // They are ignored since both operands refer to the same stack slot.
   // For bundled copies, this will only include the first header copy.
@@ -191,15 +195,18 @@ class InlineSpiller : public Spiller {
 public:
   InlineSpiller(MachineFunctionPass &Pass, MachineFunction &MF, VirtRegMap &VRM,
                 VirtRegAuxInfo &VRAI)
-      : MF(MF), LIS(Pass.getAnalysis<LiveIntervals>()),
-        LSS(Pass.getAnalysis<LiveStacks>()),
-        MDT(Pass.getAnalysis<MachineDominatorTree>()), VRM(VRM),
-        MRI(MF.getRegInfo()), TII(*MF.getSubtarget().getInstrInfo()),
+      : MF(MF), LIS(Pass.getAnalysis<LiveIntervalsWrapperPass>().getLIS()),
+        LSS(Pass.getAnalysis<LiveStacksWrapperLegacy>().getLS()),
+        MDT(Pass.getAnalysis<MachineDominatorTreeWrapperPass>().getDomTree()),
+        VRM(VRM), MRI(MF.getRegInfo()), TII(*MF.getSubtarget().getInstrInfo()),
         TRI(*MF.getSubtarget().getRegisterInfo()),
-        MBFI(Pass.getAnalysis<MachineBlockFrequencyInfo>()),
+        MBFI(
+            Pass.getAnalysis<MachineBlockFrequencyInfoWrapperPass>().getMBFI()),
         HSpiller(Pass, MF, VRM), VRAI(VRAI) {}
 
   void spill(LiveRangeEdit &) override;
+  ArrayRef<Register> getSpilledRegs() override { return RegsToSpill; }
+  ArrayRef<Register> getReplacedRegs() override { return RegsReplaced; }
   void postOptimization() override;
 
 private:
@@ -386,6 +393,7 @@ void InlineSpiller::collectRegsToSpill() {
   // Main register always spills.
   RegsToSpill.assign(1, Reg);
   SnippetCopies.clear();
+  RegsReplaced.clear();
 
   // Snippets all have the same original, so there can't be any for an original
   // register.
@@ -799,6 +807,7 @@ void InlineSpiller::reMaterializeAll() {
   for (Register Reg : RegsToSpill) {
     if (MRI.reg_nodbg_empty(Reg)) {
       Edit->eraseVirtReg(Reg);
+      RegsReplaced.push_back(Reg);
       continue;
     }
 
@@ -1258,8 +1267,13 @@ void InlineSpiller::spillAll() {
   LLVM_DEBUG(dbgs() << "Merged spilled regs: " << *StackInt << '\n');
 
   // Spill around uses of all RegsToSpill.
-  for (Register Reg : RegsToSpill)
+  for (Register Reg : RegsToSpill) {
     spillAroundUses(Reg);
+    // Assign all of the spilled registers to the slot so that
+    // LiveDebugVariables knows about these locations later on.
+    if (VRM.getStackSlot(Reg) == VirtRegMap::NO_STACK_SLOT)
+      VRM.assignVirt2StackSlot(Reg, StackSlot);
+  }
 
   // Hoisted spills may cause dead code.
   if (!DeadDefs.empty()) {
@@ -1387,7 +1401,7 @@ void HoistSpillHelper::rmRedundantSpills(
   // earlier spill with smaller SlotIndex.
   for (auto *const CurrentSpill : Spills) {
     MachineBasicBlock *Block = CurrentSpill->getParent();
-    MachineDomTreeNode *Node = MDT.getBase().getNode(Block);
+    MachineDomTreeNode *Node = MDT.getNode(Block);
     MachineInstr *PrevSpill = SpillBBToSpill[Node];
     if (PrevSpill) {
       SlotIndex PIdx = LIS.getInstructionIndex(*PrevSpill);
@@ -1395,9 +1409,9 @@ void HoistSpillHelper::rmRedundantSpills(
       MachineInstr *SpillToRm = (CIdx > PIdx) ? CurrentSpill : PrevSpill;
       MachineInstr *SpillToKeep = (CIdx > PIdx) ? PrevSpill : CurrentSpill;
       SpillsToRm.push_back(SpillToRm);
-      SpillBBToSpill[MDT.getBase().getNode(Block)] = SpillToKeep;
+      SpillBBToSpill[MDT.getNode(Block)] = SpillToKeep;
     } else {
-      SpillBBToSpill[MDT.getBase().getNode(Block)] = CurrentSpill;
+      SpillBBToSpill[MDT.getNode(Block)] = CurrentSpill;
     }
   }
   for (auto *const SpillToRm : SpillsToRm)
@@ -1471,7 +1485,7 @@ void HoistSpillHelper::getVisitOrders(
   // Sort the nodes in WorkSet in top-down order and save the nodes
   // in Orders. Orders will be used for hoisting in runHoistSpills.
   unsigned idx = 0;
-  Orders.push_back(MDT.getBase().getNode(Root));
+  Orders.push_back(MDT.getNode(Root));
   do {
     MachineDomTreeNode *Node = Orders[idx++];
     for (MachineDomTreeNode *Child : Node->children()) {
@@ -1703,7 +1717,7 @@ void HoistSpillHelper::hoistAllSpills() {
           RMEnt->removeOperand(i - 1);
       }
     }
-    Edit.eliminateDeadDefs(SpillsToRm, std::nullopt);
+    Edit.eliminateDeadDefs(SpillsToRm, {});
   }
 }
 

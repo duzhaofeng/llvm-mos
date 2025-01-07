@@ -2,9 +2,16 @@ name: Dispatch Test Suite
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'clang/**'
+      - 'compiler-rt/**'
+      - 'lld/**'
+      - 'llvm/**'
+      - '.github/workflows/dispatch_test.yml'
 
 jobs:
   dispatch:
+    if: github.repository_owner == 'llvm-mos'
     runs-on: ubuntu-latest
     steps:
       - name: Repository Dispatch

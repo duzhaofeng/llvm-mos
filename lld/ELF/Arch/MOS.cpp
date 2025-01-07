@@ -26,7 +26,7 @@ namespace elf {
 namespace {
 class MOS final : public TargetInfo {
 public:
-  MOS();
+  MOS(Ctx &ctx);
   uint32_t calcEFlags() const override;
   RelExpr getRelExpr(RelType type, const Symbol &s,
                      const uint8_t *loc) const override;
@@ -35,7 +35,7 @@ public:
 };
 } // namespace
 
-MOS::MOS() {
+MOS::MOS(Ctx &ctx) : TargetInfo(ctx) {
   defaultMaxPageSize = 1;
   defaultCommonPageSize = 1;
 }
@@ -81,34 +81,35 @@ RelExpr MOS::getRelExpr(RelType type, const Symbol &s,
 void MOS::relocate(uint8_t *loc, const Relocation &rel, uint64_t val) const {
   switch (rel.type) {
   case R_MOS_IMM8:
-    checkIntUInt(loc, val, 8, rel);
+    checkIntUInt(ctx, loc, val, 8, rel);
     *loc = static_cast<unsigned char>(val);
     break;
   case R_MOS_IMM16:
-    checkIntUInt(loc, val, 16, rel);
+    checkIntUInt(ctx, loc, val, 16, rel);
     write16le(loc, static_cast<unsigned short>(val));
     break;
   case R_MOS_PCREL_8:
-    checkInt(loc, val - 1, 8, rel);
+    checkInt(ctx, loc, val - 1, 8, rel);
     // MOS's PC relative addressing is off by one from the standard LLVM PC
     // relative convention.
     *loc = static_cast<unsigned char>(val - 1);
     break;
   case R_MOS_PCREL_16:
-    checkInt(loc, val - 2, 16, rel);
+    checkInt(ctx, loc, val - 2, 16, rel);
     // MOS's PC relative addressing is off by two from the standard LLVM PC
     // relative convention.
     write16le(loc, static_cast<unsigned short>(val - 2));
     break;
   case R_MOS_ADDR8:
+    val = llvm::SignExtend64(val & 0xffff, 16);
     // The HuC6280's zero page is at 0x2000.
-    if (config->eflags & ELF::EF_MOS_ARCH_HUC6280)
+    if (ctx.arg.eflags & ELF::EF_MOS_ARCH_HUC6280)
       val -= 0x2000;
-    checkUInt(loc, val & 0xffff, 8, rel);
+    checkIntUInt(ctx, loc, val, 8, rel);
     *loc = static_cast<unsigned char>(val);
     break;
   case R_MOS_ADDR13:
-    checkInt(loc, val & 0xffff, 13, rel);
+    checkInt(ctx, loc, val & 0xffff, 13, rel);
     write16le(loc, (read16le(loc) & ~0x1fff) | (val & 0x1fff));
     break;
   case R_MOS_ADDR16:
@@ -121,23 +122,23 @@ void MOS::relocate(uint8_t *loc, const Relocation &rel, uint64_t val) const {
     *loc = static_cast<unsigned char>(val >> 8);
     break;
   case R_MOS_ADDR24:
-    checkUInt(loc, val, 24, rel);
+    checkUInt(ctx, loc, val, 24, rel);
     write32le(loc, (read32le(loc) & ~0x00ffffff) | (val & 0x00ffffff));
     break;
   case R_MOS_ADDR24_SEGMENT:
-    checkUInt(loc, val, 24, rel);
+    checkUInt(ctx, loc, val, 24, rel);
     write16le(loc, static_cast<unsigned short>(val));
     break;
   case R_MOS_ADDR24_SEGMENT_LO:
-    checkUInt(loc, val, 24, rel);
+    checkUInt(ctx, loc, val, 24, rel);
     *loc = static_cast<unsigned char>(val);
     break;
   case R_MOS_ADDR24_SEGMENT_HI:
-    checkUInt(loc, val, 24, rel);
+    checkUInt(ctx, loc, val, 24, rel);
     *loc = static_cast<unsigned char>(val >> 8);
     break;
   case R_MOS_ADDR24_BANK:
-    checkUInt(loc, val, 24, rel);
+    checkUInt(ctx, loc, val, 24, rel);
     *loc = static_cast<unsigned char>(val >> 16);
     break;
   case R_MOS_FK_DATA_4:
@@ -154,15 +155,11 @@ void MOS::relocate(uint8_t *loc, const Relocation &rel, uint64_t val) const {
     break;
   }
   default:
-    error(getErrorLocation(loc) + "unrecognized relocation " +
-          toString(rel.type));
+    error(getErrorLoc(ctx, loc) + "unrecognized relocation " + toStr(ctx, rel.type));
   }
 }
 
-TargetInfo *getMOSTargetInfo() {
-  static MOS target;
-  return &target;
-}
+void setMOSTargetInfo(Ctx &ctx) { ctx.target.reset(new MOS(ctx)); }
 
 } // namespace elf
 } // namespace lld

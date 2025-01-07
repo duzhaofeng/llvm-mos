@@ -44,21 +44,6 @@ MOSTargetLowering::MOSTargetLowering(const MOSTargetMachine &TM,
   addRegisterClass(MVT::i16, &MOS::Imag16RegClass);
   computeRegisterProperties(STI.getRegisterInfo());
 
-  // The memset intrinsic takes an char, while the C memset takes an int. These
-  // are different in the MOS calling convention, since arguments are not
-  // automatically promoted to int. "memset" is the C version, and "__memset" is
-  // the intrinsic version.
-  setLibcallName(RTLIB::MEMSET, "__memset");
-
-  setLibcallName(RTLIB::UDIVREM_I8, "__udivmodqi4");
-  setLibcallName(RTLIB::UDIVREM_I16, "__udivmodhi4");
-  setLibcallName(RTLIB::UDIVREM_I32, "__udivmodsi4");
-  setLibcallName(RTLIB::UDIVREM_I64, "__udivmoddi4");
-  setLibcallName(RTLIB::SDIVREM_I8, "__divmodqi4");
-  setLibcallName(RTLIB::SDIVREM_I16, "__divmodhi4");
-  setLibcallName(RTLIB::SDIVREM_I32, "__divmodsi4");
-  setLibcallName(RTLIB::SDIVREM_I64, "__divmoddi4");
-
   // Used in legalizer (etc.) to refer to the stack pointer.
   setStackPointerRegisterToSaveRestore(MOS::RS0);
 
@@ -212,16 +197,30 @@ bool MOSTargetLowering::isLegalAddressingMode(const DataLayout &DL,
   return true;
 }
 
-bool MOSTargetLowering::isTruncateFree(Type *SrcTy, Type *DstTy) const {
-  if (!SrcTy->isIntegerTy() || !DstTy->isIntegerTy())
+bool MOSTargetLowering::isTruncateFree(Type *FromTy, Type *ToTy) const {
+  if (!FromTy->isIntegerTy() || !ToTy->isIntegerTy())
     return false;
-  return SrcTy->getPrimitiveSizeInBits() > DstTy->getPrimitiveSizeInBits();
+  return FromTy->getPrimitiveSizeInBits() > ToTy->getPrimitiveSizeInBits();
 }
 
-bool MOSTargetLowering::isZExtFree(Type *SrcTy, Type *DstTy) const {
-  if (!SrcTy->isIntegerTy() || !DstTy->isIntegerTy())
+bool MOSTargetLowering::isTruncateFree(LLT FromTy, LLT ToTy,
+                                       LLVMContext &Ctx) const {
+  if (!FromTy.isScalar() || !ToTy.isScalar())
     return false;
-  return SrcTy->getPrimitiveSizeInBits() < DstTy->getPrimitiveSizeInBits();
+  return FromTy.getScalarSizeInBits() > ToTy.getScalarSizeInBits();
+}
+
+bool MOSTargetLowering::isZExtFree(Type *FromTy, Type *ToTy) const {
+  if (!FromTy->isIntegerTy() || !ToTy->isIntegerTy())
+    return false;
+  return FromTy->getPrimitiveSizeInBits() < ToTy->getPrimitiveSizeInBits();
+}
+
+bool MOSTargetLowering::isZExtFree(LLT FromTy, LLT ToTy,
+                                   LLVMContext &Ctx) const {
+  if (!FromTy.isScalar() || !ToTy.isScalar())
+    return false;
+  return FromTy.getScalarSizeInBits() < ToTy.getScalarSizeInBits();
 }
 
 static MachineBasicBlock *emitSelectImm(MachineInstr &MI,
@@ -419,7 +418,7 @@ static MachineBasicBlock *emitIncDecMB(MachineInstr &MI,
   // Emitting INC/DEC sequences of N bytes is done in one of the following
   // three ways (? denotes a register):
   // 1. INC:            INC value / BNE increment_done
-  // 2. DEC (register): DE? / CP? #0 / BNE decrement_done
+  // 2. DEC (register): DE? / CP? #$FF / BNE decrement_done
   // 3. DEC (memory):   LD? #$FF / DEC value / CP? value / BNE decrement_done
   // In addition:
   // - The comparison and branch are omitted for the final INC/DEC.
@@ -471,10 +470,9 @@ static MachineBasicBlock *emitIncDecMB(MachineInstr &MI,
         // Avoid copying additional register flags here.
         // They will apply to the last opcode in the chain (CMP) instead.
         First.addDef(MI.getOperand(FirstDefIdx).getReg())
-             .addUse(MI.getOperand(FirstUseIdx).getReg());
+            .addUse(MI.getOperand(FirstUseIdx).getReg());
       } else {
-        First.add(MI.getOperand(FirstDefIdx))
-             .add(MI.getOperand(FirstUseIdx));
+        First.add(MI.getOperand(FirstDefIdx)).add(MI.getOperand(FirstUseIdx));
       }
       ++FirstDefIdx;
     } else {

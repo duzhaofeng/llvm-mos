@@ -12,6 +12,7 @@
 
 #include "MOSTargetMachine.h"
 
+#include "llvm/CodeGen/CodeGenTargetMachineImpl.h"
 #include "llvm/CodeGen/GlobalISel/CSEInfo.h"
 #include "llvm/CodeGen/GlobalISel/IRTranslator.h"
 #include "llvm/CodeGen/GlobalISel/InstructionSelect.h"
@@ -91,9 +92,9 @@ MOSTargetMachine::MOSTargetMachine(const Target &T, const Triple &TT,
                                    std::optional<Reloc::Model> RM,
                                    std::optional<CodeModel::Model> CM,
                                    CodeGenOptLevel OL, bool JIT)
-    : LLVMTargetMachine(T, MOSDataLayout, TT, getCPU(CPU), FS, Options,
-                        getEffectiveRelocModel(RM),
-                        getEffectiveCodeModel(CM, CodeModel::Small), OL),
+    : CodeGenTargetMachineImpl(T, MOSDataLayout, TT, getCPU(CPU), FS, Options,
+                               getEffectiveRelocModel(RM),
+                               getEffectiveCodeModel(CM, CodeModel::Small), OL),
       SubTarget(TT, getCPU(CPU).str(), FS.str(), *this) {
   this->TLOF = std::make_unique<MOSTargetObjectFile>();
 
@@ -128,8 +129,7 @@ MOSTargetMachine::getTargetTransformInfo(const Function &F) const {
   return TargetTransformInfo(MOSTTIImpl(this, F));
 }
 
-void MOSTargetMachine::registerPassBuilderCallbacks(
-    PassBuilder &PB, bool PopulateClassToPassNames) {
+void MOSTargetMachine::registerPassBuilderCallbacks(PassBuilder &PB) {
   PB.registerPipelineParsingCallback(
       [](StringRef Name, LoopPassManager &PM,
          ArrayRef<PassBuilder::PipelineElement>) {

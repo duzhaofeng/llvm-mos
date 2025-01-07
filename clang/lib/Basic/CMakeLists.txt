@@ -57,6 +57,7 @@ if(CLANG_VENDOR)
 endif()
 
 add_clang_library(clangBasic
+  ASTSourceDescriptor.cpp
   Attributes.cpp
   Builtins.cpp
   CLWarnings.cpp
@@ -90,6 +91,7 @@ add_clang_library(clangBasic
   SourceManager.cpp
   SourceMgrAdapter.cpp
   Stack.cpp
+  StackExhaustionHandler.cpp
   TargetID.cpp
   TargetInfo.cpp
   Targets.cpp
@@ -103,7 +105,6 @@ add_clang_library(clangBasic
   Targets/DirectX.cpp
   Targets/Hexagon.cpp
   Targets/Lanai.cpp
-  Targets/Le64.cpp
   Targets/LoongArch.cpp
   Targets/M68k.cpp
   Targets/MOS.cpp
@@ -122,6 +123,7 @@ add_clang_library(clangBasic
   Targets/WebAssembly.cpp
   Targets/X86.cpp
   Targets/XCore.cpp
+  Targets/Xtensa.cpp
   TokenKinds.cpp
   TypeTraits.cpp
   Version.cpp

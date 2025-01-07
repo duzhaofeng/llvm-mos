@@ -51,6 +51,7 @@
 #include "llvm/IR/InstrTypes.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/Intrinsics.h"
+#include "llvm/IR/RuntimeLibcalls.h"
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/MathExtras.h"
 
@@ -1235,7 +1236,7 @@ bool MOSLegalizerInfo::legalizeICmp(LegalizerHelper &Helper,
                          : Builder.buildICmp(Pred, S1, LHSHigh, RHSHigh);
       auto RestPred = Pred;
       if (CmpInst::isSigned(RestPred))
-        RestPred = CmpInst::getUnsignedPredicate(Pred);
+        RestPred = ICmpInst::getUnsignedPredicate(Pred);
       auto CmpRest =
           Builder.buildICmp(RestPred, S1, LHSRest, RHSRest).getReg(0);
 
@@ -2222,8 +2223,8 @@ bool MOSLegalizerInfo::legalizeTrap(LegalizerHelper &Helper,
                                     MachineInstr &MI) const {
   auto *RetTy = Type::getVoidTy(MI.getMF()->getFunction().getContext());
   LostDebugLocObserver LocObserver("");
-  if (!createLibcall(Helper.MIRBuilder, "abort", {{}, RetTy, 0}, {},
-                     CallingConv::C, LocObserver))
+  if (!createLibcall(Helper.MIRBuilder, RTLIB::ABORT, {{}, RetTy, 0}, {},
+                     LocObserver))
     return false;
   MI.eraseFromParent();
   return true;

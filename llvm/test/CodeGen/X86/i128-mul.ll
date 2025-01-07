@@ -115,7 +115,7 @@ define i64 @mul1(i64 %n, ptr nocapture %z, ptr nocapture %x, i64 %y) nounwind {
 ; X86-NOBMI-NEXT:    xorl %ecx, %ecx
 ; X86-NOBMI-NEXT:    xorl %eax, %eax
 ; X86-NOBMI-NEXT:    xorl %edx, %edx
-; X86-NOBMI-NEXT:    .p2align 4, 0x90
+; X86-NOBMI-NEXT:    .p2align 4
 ; X86-NOBMI-NEXT:  .LBB1_2: # %for.body
 ; X86-NOBMI-NEXT:    # =>This Inner Loop Header: Depth=1
 ; X86-NOBMI-NEXT:    movl %edx, {{[-0-9]+}}(%e{{[sb]}}p) # 4-byte Spill
@@ -201,7 +201,7 @@ define i64 @mul1(i64 %n, ptr nocapture %z, ptr nocapture %x, i64 %y) nounwind {
 ; X86-BMI-NEXT:    xorl %ebx, %ebx
 ; X86-BMI-NEXT:    xorl %ecx, %ecx
 ; X86-BMI-NEXT:    xorl %edx, %edx
-; X86-BMI-NEXT:    .p2align 4, 0x90
+; X86-BMI-NEXT:    .p2align 4
 ; X86-BMI-NEXT:  .LBB1_2: # %for.body
 ; X86-BMI-NEXT:    # =>This Inner Loop Header: Depth=1
 ; X86-BMI-NEXT:    movl %ecx, {{[-0-9]+}}(%e{{[sb]}}p) # 4-byte Spill
@@ -265,7 +265,7 @@ define i64 @mul1(i64 %n, ptr nocapture %z, ptr nocapture %x, i64 %y) nounwind {
 ; X64-NOBMI-NEXT:    movq %rdx, %r8
 ; X64-NOBMI-NEXT:    xorl %r10d, %r10d
 ; X64-NOBMI-NEXT:    xorl %r9d, %r9d
-; X64-NOBMI-NEXT:    .p2align 4, 0x90
+; X64-NOBMI-NEXT:    .p2align 4
 ; X64-NOBMI-NEXT:  .LBB1_2: # %for.body
 ; X64-NOBMI-NEXT:    # =>This Inner Loop Header: Depth=1
 ; X64-NOBMI-NEXT:    movq %rcx, %rax
@@ -289,7 +289,7 @@ define i64 @mul1(i64 %n, ptr nocapture %z, ptr nocapture %x, i64 %y) nounwind {
 ; X64-BMI-NEXT:    movq %rdx, %rax
 ; X64-BMI-NEXT:    xorl %r9d, %r9d
 ; X64-BMI-NEXT:    xorl %r8d, %r8d
-; X64-BMI-NEXT:    .p2align 4, 0x90
+; X64-BMI-NEXT:    .p2align 4
 ; X64-BMI-NEXT:  .LBB1_2: # %for.body
 ; X64-BMI-NEXT:    # =>This Inner Loop Header: Depth=1
 ; X64-BMI-NEXT:    movq %rcx, %rdx
