@@ -64,7 +64,8 @@ struct MOSValueAssigner : CallLowering::ValueAssigner {
     for (Register R : Reserved.set_bits())
       State.AllocateReg(R);
 
-    if (getAssignFn(!Info.IsFixed)(ValNo, ValVT, LocVT, LocInfo, Flags, State))
+    if (getAssignFn(Flags.isVarArg())(ValNo, ValVT, LocVT, LocInfo, Flags,
+                                      Info.Ty, State))
       return true;
     StackSize = State.getStackSize();
     return false;
@@ -83,7 +84,8 @@ struct MOSOutgoingValueHandler : CallLowering::OutgoingValueHandler {
       : OutgoingValueHandler(MIRBuilder, MRI), MIB(MIB) {}
 
   void assignValueToReg(Register ValVReg, Register PhysReg,
-                        const CCValAssign &VA) override {
+                        const CCValAssign &VA,
+                        ISD::ArgFlagsTy Flags = {}) override {
     // Ensure that the physical remains alive until control flow leaves the
     // current function.
     MIB.addUse(PhysReg, RegState::Implicit);
@@ -152,7 +154,8 @@ struct MOSIncomingValueHandler : CallLowering::IncomingValueHandler {
       : IncomingValueHandler(MIRBuilder, MRI) {}
 
   void assignValueToReg(Register ValVReg, Register PhysReg,
-                        const CCValAssign &VA) override {
+                        const CCValAssign &VA,
+                        ISD::ArgFlagsTy Flags = {}) override {
     switch (VA.getLocVT().getSizeInBits()) {
     default:
       report_fatal_error("Not yet implemented.");

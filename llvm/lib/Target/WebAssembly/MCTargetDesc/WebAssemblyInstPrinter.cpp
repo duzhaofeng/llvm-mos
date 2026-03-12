@@ -12,11 +12,13 @@
 //===----------------------------------------------------------------------===//
 
 #include "MCTargetDesc/WebAssemblyInstPrinter.h"
+#include "MCTargetDesc/WebAssemblyMCAsmInfo.h"
 #include "MCTargetDesc/WebAssemblyMCTargetDesc.h"
 #include "MCTargetDesc/WebAssemblyMCTypeUtilities.h"
 #include "llvm/ADT/APFloat.h"
 #include "llvm/ADT/SmallSet.h"
 #include "llvm/ADT/StringExtras.h"
+#include "llvm/MC/MCAsmInfo.h"
 #include "llvm/MC/MCExpr.h"
 #include "llvm/MC/MCInst.h"
 #include "llvm/MC/MCInstrInfo.h"
@@ -46,7 +48,16 @@ void WebAssemblyInstPrinter::printInst(const MCInst *MI, uint64_t Address,
                                        StringRef Annot,
                                        const MCSubtargetInfo &STI,
                                        raw_ostream &OS) {
+  unsigned TypeOperand = 0;
+  unsigned TableOperand = 1;
   switch (MI->getOpcode()) {
+  case WebAssembly::CALL_INDIRECT: {
+    unsigned NumDefs = MI->getOperand(0).getImm();
+    TypeOperand = NumDefs + 1;
+    TableOperand = NumDefs + 2;
+    [[fallthrough]];
+  }
+  case WebAssembly::RET_CALL_INDIRECT:
   case WebAssembly::CALL_INDIRECT_S:
   case WebAssembly::RET_CALL_INDIRECT_S: {
     // A special case for call_indirect (and ret_call_indirect), if the table
@@ -57,10 +68,6 @@ void WebAssemblyInstPrinter::printInst(const MCInst *MI, uint64_t Address,
     OS << "\t";
     OS << getMnemonic(*MI).first;
     OS << " ";
-
-    assert(MI->getNumOperands() == 2);
-    const unsigned TypeOperand = 0;
-    const unsigned TableOperand = 1;
     if (MI->getOperand(TableOperand).isExpr()) {
       printOperand(MI, TableOperand, OS);
       OS << ", ";
@@ -68,6 +75,8 @@ void WebAssemblyInstPrinter::printInst(const MCInst *MI, uint64_t Address,
       assert(MI->getOperand(TableOperand).getImm() == 0);
     }
     printOperand(MI, TypeOperand, OS);
+    if (MI->getOpcode() == WebAssembly::CALL_INDIRECT)
+      OS << ", ";
     break;
   }
   default:
@@ -315,8 +324,8 @@ void WebAssemblyInstPrinter::printOperand(const MCInst *MI, unsigned OpNo,
   const MCOperand &Op = MI->getOperand(OpNo);
   if (Op.isReg()) {
     const MCInstrDesc &Desc = MII.get(MI->getOpcode());
-    unsigned WAReg = Op.getReg();
-    if (int(WAReg) >= 0)
+    MCRegister WAReg = Op.getReg();
+    if (int(WAReg.id()) >= 0)
       printRegName(O, WAReg);
     else if (OpNo >= Desc.getNumDefs() && !IsVariadicDef)
       O << "$pop" << WebAssembly::getWARegStackId(WAReg);
@@ -339,11 +348,11 @@ void WebAssemblyInstPrinter::printOperand(const MCInst *MI, unsigned OpNo,
     // as a signature here, such that the assembler can recover this
     // information.
     auto SRE = static_cast<const MCSymbolRefExpr *>(Op.getExpr());
-    if (SRE->getKind() == MCSymbolRefExpr::VK_WASM_TYPEINDEX) {
+    if (SRE->getSpecifier() == WebAssembly::S_TYPEINDEX) {
       auto &Sym = static_cast<const MCSymbolWasm &>(SRE->getSymbol());
       O << WebAssembly::signatureToString(Sym.getSignature());
     } else {
-      Op.getExpr()->print(O, &MAI);
+      MAI.printExpr(O, *Op.getExpr());
     }
   }
 }
@@ -378,7 +387,7 @@ void WebAssemblyInstPrinter::printWebAssemblySignatureOperand(const MCInst *MI,
       O << WebAssembly::anyTypeToString(Imm);
   } else {
     auto Expr = cast<MCSymbolRefExpr>(Op.getExpr());
-    auto *Sym = cast<MCSymbolWasm>(&Expr->getSymbol());
+    auto *Sym = static_cast<const MCSymbolWasm *>(&Expr->getSymbol());
     if (Sym->getSignature()) {
       O << WebAssembly::signatureToString(Sym->getSignature());
     } else {
@@ -396,10 +405,10 @@ void WebAssemblyInstPrinter::printCatchList(const MCInst *MI, unsigned OpNo,
 
   auto PrintTagOp = [&](const MCOperand &Op) {
     const MCSymbolRefExpr *TagExpr = nullptr;
-    const MCSymbolWasm *TagSym = nullptr;
+    const MCSymbol *TagSym = nullptr;
     if (Op.isExpr()) {
       TagExpr = cast<MCSymbolRefExpr>(Op.getExpr());
-      TagSym = cast<MCSymbolWasm>(&TagExpr->getSymbol());
+      TagSym = &TagExpr->getSymbol();
       O << TagSym->getName() << " ";
     } else {
       // When instructions are parsed from the disassembler, we have an

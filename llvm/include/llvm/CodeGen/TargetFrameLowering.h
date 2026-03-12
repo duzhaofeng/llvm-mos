@@ -17,6 +17,7 @@
 #include "llvm/ADT/BitVector.h"
 #include "llvm/CodeGen/MachineBasicBlock.h"
 #include "llvm/CodeGen/MachineOptimizationRemarkEmitter.h"
+#include "llvm/Support/Compiler.h"
 #include "llvm/Support/TypeSize.h"
 #include <vector>
 
@@ -32,8 +33,9 @@ enum Value {
   SGPRSpill = 1,
   ScalableVector = 2,
   WasmLocal = 3,
-  MosStatic = 4,
-  MosZeroPage = 5,
+  ScalablePredicateVector = 4,
+  MosStatic = 5,
+  MosZeroPage = 6,
   NoAlloc = 255
 };
 }
@@ -45,7 +47,7 @@ enum Value {
 /// The offset to the local area is the offset from the stack pointer on
 /// function entry to the first location where function data (local variables,
 /// spill locations) can be stored.
-class TargetFrameLowering {
+class LLVM_ABI TargetFrameLowering {
 public:
   enum StackDirection {
     StackGrowsUp,        // Adding to the stack increases the stack address
@@ -160,14 +162,6 @@ public:
   /// returns false, spill slots will be assigned using generic implementation.
   /// assignCalleeSavedSpillSlots() may add, delete or rearrange elements of
   /// CSI.
-  virtual bool assignCalleeSavedSpillSlots(MachineFunction &MF,
-                                           const TargetRegisterInfo *TRI,
-                                           std::vector<CalleeSavedInfo> &CSI,
-                                           unsigned &MinCSFrameIndex,
-                                           unsigned &MaxCSFrameIndex) const {
-    return assignCalleeSavedSpillSlots(MF, TRI, CSI);
-  }
-
   virtual bool
   assignCalleeSavedSpillSlots(MachineFunction &MF,
                               const TargetRegisterInfo *TRI,
@@ -232,10 +226,17 @@ public:
 
   /// Returns true if we may need to fix the unwind information for the
   /// function.
-  virtual bool enableCFIFixup(MachineFunction &MF) const;
+  virtual bool enableCFIFixup(const MachineFunction &MF) const;
+
+  /// enableFullCFIFixup - Returns true if we may need to fix the unwind
+  /// information such that it is accurate for *every* instruction in the
+  /// function (e.g. if the function has an async unwind table).
+  virtual bool enableFullCFIFixup(const MachineFunction &MF) const {
+    return enableCFIFixup(MF);
+  };
 
   /// Emit CFI instructions that recreate the state of the unwind information
-  /// upon fucntion entry.
+  /// upon function entry.
   virtual void resetCFIToInitialState(MachineBasicBlock &MBB) const {}
 
   /// Replace a StackProbe stub (if any) with the actual probe code inline
@@ -266,6 +267,14 @@ public:
     return false;
   }
 
+  /// spillCalleeSavedRegister - Default implementation for spilling a single
+  /// callee saved register.
+  void spillCalleeSavedRegister(MachineBasicBlock &SaveBlock,
+                                MachineBasicBlock::iterator MI,
+                                const CalleeSavedInfo &CS,
+                                const TargetInstrInfo *TII,
+                                const TargetRegisterInfo *TRI) const;
+
   /// restoreCalleeSavedRegisters - Issues instruction(s) to restore all callee
   /// saved registers and returns true if it isn't possible / profitable to do
   /// so by issuing a series of load instructions via loadRegToStackSlot().
@@ -279,6 +288,15 @@ public:
                               const TargetRegisterInfo *TRI) const {
     return false;
   }
+
+  // restoreCalleeSavedRegister - Default implementation for restoring a single
+  // callee saved register. Should be called in reverse order. Can insert
+  // multiple instructions.
+  void restoreCalleeSavedRegister(MachineBasicBlock &MBB,
+                                  MachineBasicBlock::iterator MI,
+                                  const CalleeSavedInfo &CS,
+                                  const TargetInstrInfo *TII,
+                                  const TargetRegisterInfo *TRI) const;
 
   /// hasFP - Return true if the specified function should have a dedicated
   /// frame pointer register. For most targets this is true only if the function

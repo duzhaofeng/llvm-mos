@@ -11,10 +11,10 @@
 #include "llvm/ADT/SCCIterator.h"
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/SmallVector.h"
+#include "llvm/ADT/StringExtras.h"
 #include "llvm/Config/llvm-config.h"
 #include "llvm/IR/AbstractCallSite.h"
 #include "llvm/IR/Function.h"
-#include "llvm/IR/IntrinsicInst.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/PassManager.h"
 #include "llvm/InitializePasses.h"
@@ -35,8 +35,7 @@ CallGraph::CallGraph(Module &M)
       CallsExternalNode(std::make_unique<CallGraphNode>(this, nullptr)) {
   // Add every interesting function to the call graph.
   for (Function &F : M)
-    if (!isDbgInfoIntrinsic(F.getIntrinsicID()))
-      addToCallGraph(&F);
+    addToCallGraph(&F);
 }
 
 CallGraph::CallGraph(CallGraph &&Arg)
@@ -104,8 +103,9 @@ void CallGraph::populateCallGraphNode(CallGraphNode *Node) {
         if (!Callee) {
           if (!Call->hasFnAttr(Attribute::NoCallback))
             Node->addCalledFunction(Call, CallsExternalNode.get());
-        } else if (!isDbgInfoIntrinsic(Callee->getIntrinsicID()))
+        } else {
           Node->addCalledFunction(Call, getOrInsertFunction(Callee));
+        }
 
         // Add reference to callback functions or the external node if the
         // callback is indirect.
@@ -144,16 +144,6 @@ void CallGraph::print(raw_ostream &OS) const {
 #if !defined(NDEBUG) || defined(LLVM_ENABLE_DUMP)
 LLVM_DUMP_METHOD void CallGraph::dump() const { print(dbgs()); }
 #endif
-
-void CallGraph::ReplaceExternalCallEdge(CallGraphNode *Old,
-                                        CallGraphNode *New) {
-  for (auto &CR : ExternalCallingNode->CalledFunctions)
-    if (CR.second == Old) {
-      CR.second->DropRef();
-      CR.second = New;
-      CR.second->AddRef();
-    }
-}
 
 // removeFunctionFromModule - Unlink the function from this module, returning
 // it.  Because this removes the function from the module, the call graph node
@@ -209,39 +199,6 @@ void CallGraphNode::print(raw_ostream &OS) const {
 #if !defined(NDEBUG) || defined(LLVM_ENABLE_DUMP)
 LLVM_DUMP_METHOD void CallGraphNode::dump() const { print(dbgs()); }
 #endif
-
-/// removeCallEdgeFor - This method removes the edge in the node for the
-/// specified call site.  Note that this method takes linear time, so it
-/// should be used sparingly.
-void CallGraphNode::removeCallEdgeFor(CallBase &Call) {
-  for (CalledFunctionsVector::iterator I = CalledFunctions.begin(); ; ++I) {
-    assert(I != CalledFunctions.end() && "Cannot find callsite to remove!");
-    if (I->first && *I->first == &Call) {
-      I->second->DropRef();
-      *I = CalledFunctions.back();
-      CalledFunctions.pop_back();
-
-      // Remove all references to callback functions if there are any.
-      forEachCallbackFunction(Call, [=](Function *CB) {
-        removeOneAbstractEdgeTo(CG->getOrInsertFunction(CB));
-      });
-      return;
-    }
-  }
-}
-
-// removeAnyCallEdgeTo - This method removes any call edges from this node to
-// the specified callee function.  This takes more time to execute than
-// removeCallEdgeTo, so it should not be used unless necessary.
-void CallGraphNode::removeAnyCallEdgeTo(CallGraphNode *Callee) {
-  for (unsigned i = 0, e = CalledFunctions.size(); i != e; ++i)
-    if (CalledFunctions[i].second == Callee) {
-      Callee->DropRef();
-      CalledFunctions[i] = CalledFunctions.back();
-      CalledFunctions.pop_back();
-      --i; --e;
-    }
-}
 
 /// removeOneAbstractEdgeTo - Remove one edge associated with a null callsite
 /// from this node to the specified callee function.
@@ -325,16 +282,11 @@ PreservedAnalyses CallGraphSCCsPrinterPass::run(Module &M,
        ++SCCI) {
     const std::vector<CallGraphNode *> &nextSCC = *SCCI;
     OS << "\nSCC #" << ++sccNum << ": ";
-    bool First = true;
-    for (CallGraphNode *CGN : nextSCC) {
-      if (First)
-        First = false;
-      else
-        OS << ", ";
-      OS << (CGN->getFunction() ? CGN->getFunction()->getName()
+    ListSeparator LS;
+    for (CallGraphNode *CGN : nextSCC)
+      OS << LS
+         << (CGN->getFunction() ? CGN->getFunction()->getName()
                                 : "external node");
-    }
-
     if (nextSCC.size() == 1 && SCCI.hasCycle())
       OS << " (Has self-loop).";
   }
@@ -350,9 +302,7 @@ PreservedAnalyses CallGraphSCCsPrinterPass::run(Module &M,
 // Implementations of the CallGraphWrapperPass class methods.
 //
 
-CallGraphWrapperPass::CallGraphWrapperPass() : ModulePass(ID) {
-  initializeCallGraphWrapperPassPass(*PassRegistry::getPassRegistry());
-}
+CallGraphWrapperPass::CallGraphWrapperPass() : ModulePass(ID) {}
 
 CallGraphWrapperPass::~CallGraphWrapperPass() = default;
 

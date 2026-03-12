@@ -349,10 +349,9 @@ bool MOSZeroPageAlloc::runOnModule(Module &M) {
           M, Cand->GV->getValueType(), Cand->GV->isConstant(),
           Cand->GV->getLinkage(), Cand->GV->getInitializer());
       Cand->GV->replaceAllUsesWith(Tmp);
-      Cand->GV->mutateType(
-          PointerType::get(Cand->GV->getValueType(), MOS::AS_ZeroPage));
+      Cand->GV->mutateType(PointerType::get(M.getContext(), MOS::AS_ZeroPage));
       Tmp->replaceAllUsesWith(ConstantExpr::getAddrSpaceCast(
-          Cand->GV, PointerType::get(Cand->GV->getValueType(), 0)));
+          Cand->GV, PointerType::get(M.getContext(), 0)));
       Tmp->eraseFromParent();
       LLVM_DEBUG(dbgs() << "  " << *Cand->GV << '\n');
     } else {
@@ -533,21 +532,24 @@ void MOSZeroPageAlloc::collectCandidates(
   if (!TFL.usesStaticStack(MF))
     return;
 
-  float SaveFreq;
+  float SaveFreq = 0;
   float RestoreFreq = 0;
-  if (MFI.getSavePoint()) {
-    SaveFreq = getFreq(BFI, *MFI.getSavePoint());
-    MachineBasicBlock *RestoreBlock = MFI.getRestorePoint();
-    // If RestoreBlock does not have any successor and is not a return block
-    // then the end point is unreachable and we do not need to insert any
-    // epilogue.
-    if (!RestoreBlock->succ_empty() || RestoreBlock->isReturnBlock())
-      RestoreFreq = getFreq(BFI, *RestoreBlock);
-  } else {
+  if (MFI.getSavePoints().empty()) {
     SaveFreq = getFreq(BFI, *MF.begin());
     for (MachineBasicBlock &MBB : MF) {
       if (MBB.isReturnBlock())
         RestoreFreq += getFreq(BFI, MBB);
+    }
+  } else {
+    for (const auto &[SavePoint, _] : MFI.getSavePoints())
+      SaveFreq += getFreq(BFI, *SavePoint);
+    for (const auto &[RestorePoint, _] : MFI.getRestorePoints()) {
+      // If block does not have any successor and is not a return block
+      // then the end point is unreachable and we do not need to insert any
+      // epilogue.
+      if (RestorePoint->succ_empty() && RestorePoint->isReturnBlock())
+        continue;
+      RestoreFreq += getFreq(BFI, *RestorePoint);
     }
   }
 

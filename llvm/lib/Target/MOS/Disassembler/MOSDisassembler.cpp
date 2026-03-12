@@ -18,6 +18,7 @@
 
 #include "llvm/MC/MCAsmInfo.h"
 #include "llvm/MC/MCContext.h"
+#include "llvm/MC/MCDecoder.h"
 #include "llvm/MC/MCDecoderOps.h"
 #include "llvm/MC/MCDisassembler/MCDisassembler.h"
 #include "llvm/MC/MCInst.h"
@@ -26,6 +27,7 @@
 #include <optional>
 
 using namespace llvm;
+using namespace llvm::MCD;
 
 #define DEBUG_TYPE "mos-disassembler"
 
@@ -229,9 +231,10 @@ std::optional<const uint8_t *> getDecoderTableSPC700(size_t Size) {
 
 template <typename InsnType>
 static DecodeStatus
-decodeInstruction(std::optional<const uint8_t *> DecodeTable, MCInst &MI,
-                  InsnType insn, uint64_t Address, const MCDisassembler *DisAsm,
-                  const MCSubtargetInfo &STI) {
+maybeDecodeInstruction(std::optional<const uint8_t *> DecodeTable, MCInst &MI,
+                       InsnType insn, uint64_t Address,
+                       const MCDisassembler *DisAsm,
+                       const MCSubtargetInfo &STI) {
   if (!DecodeTable.has_value())
     return MCDisassembler::Fail;
 
@@ -273,8 +276,8 @@ DecodeStatus MOSDisassembler::getInstruction(MCInst &Instr, uint64_t &Size,
       for (size_t Byte : seq((size_t)0, InsnSize)) {
         Insn |= ((uint64_t)Bytes[Byte]) << (8 * Byte);
       }
-      DecodeStatus Result = decodeInstruction(getDecoderTableSPC700(InsnSize),
-                                              Instr, Insn, Address, this, STI);
+      DecodeStatus Result = maybeDecodeInstruction(
+          getDecoderTableSPC700(InsnSize), Instr, Insn, Address, this, STI);
       if (Result != MCDisassembler::Fail) {
         Size = InsnSize;
         return Result;
@@ -294,8 +297,8 @@ DecodeStatus MOSDisassembler::getInstruction(MCInst &Instr, uint64_t &Size,
       for (size_t Byte : seq((size_t)0, InsnSize)) {
         Insn |= ((uint64_t)Bytes[Byte]) << (8 * Byte);
       }
-      DecodeStatus Result = decodeInstruction(getDecoderTable45GS02(InsnSize),
-                                              Instr, Insn, Address, this, STI);
+      DecodeStatus Result = maybeDecodeInstruction(
+          getDecoderTable45GS02(InsnSize), Instr, Insn, Address, this, STI);
       if (Result != MCDisassembler::Fail) {
         Size = InsnSize;
         return Result;
@@ -312,19 +315,19 @@ DecodeStatus MOSDisassembler::getInstruction(MCInst &Instr, uint64_t &Size,
         Insn |= Bytes[Byte] << (8 * Byte);
       }
       if (MLow) {
-        Result = decodeInstruction(DecoderTableMOSMLow24, Instr, Insn, Address,
-                                   this, STI);
+        Result = maybeDecodeInstruction(DecoderTableMOSMLow24, Instr, Insn,
+                                        Address, this, STI);
       }
       if (Result == MCDisassembler::Fail && XLow) {
-        Result = decodeInstruction(DecoderTableMOSXLow24, Instr, Insn, Address,
-                                   this, STI);
+        Result = maybeDecodeInstruction(DecoderTableMOSXLow24, Instr, Insn,
+                                        Address, this, STI);
       }
       if (Result != MCDisassembler::Fail) {
         MCOperand &Op = Instr.getOperand(0);
         if ((uint64_t)Op.getImm() <= UCHAR_MAX) {
           // Add mos16 modifier if necessary to retain 16-bit width.
           Op = MCOperand::createExpr(MOSMCExpr::create(
-              MOSMCExpr::VK_MOS_IMM16,
+              MOSMCExpr::VK_IMM16,
               MCConstantExpr::create(Op.getImm(), getContext()), false,
               getContext()));
         }
@@ -346,49 +349,49 @@ DecodeStatus MOSDisassembler::getInstruction(MCInst &Instr, uint64_t &Size,
     }
     if (Result == MCDisassembler::Fail) {
       if (STI.getFeatureBits()[MOS::Feature65CE02]) {
-        Result = decodeInstruction(getDecoderTable65CE02(InsnSize), Instr, Insn,
-                                   Address, this, STI);
+        Result = maybeDecodeInstruction(getDecoderTable65CE02(InsnSize), Instr,
+                                        Insn, Address, this, STI);
       }
     }
     if (Result == MCDisassembler::Fail) {
       if (STI.getFeatureBits()[MOS::Feature65EL02]) {
-        Result = decodeInstruction(getDecoderTable65EL02(InsnSize), Instr, Insn,
-                                   Address, this, STI);
+        Result = maybeDecodeInstruction(getDecoderTable65EL02(InsnSize), Instr,
+                                        Insn, Address, this, STI);
       }
     }
     if (Result == MCDisassembler::Fail) {
       if (STI.getFeatureBits()[MOS::FeatureW65816]) {
-        Result = decodeInstruction(getDecoderTableW65816(InsnSize), Instr, Insn,
-                                   Address, this, STI);
+        Result = maybeDecodeInstruction(getDecoderTableW65816(InsnSize), Instr,
+                                        Insn, Address, this, STI);
       }
     }
     if (Result == MCDisassembler::Fail) {
       if (STI.getFeatureBits()[MOS::FeatureHUC6280]) {
-        Result = decodeInstruction(getDecoderTableHUC6280(InsnSize), Instr,
-                                   Insn, Address, this, STI);
+        Result = maybeDecodeInstruction(getDecoderTableHUC6280(InsnSize), Instr,
+                                        Insn, Address, this, STI);
       }
     }
     if (Result == MCDisassembler::Fail) {
       if (STI.getFeatureBits()[MOS::FeatureR65C02]) {
-        Result = decodeInstruction(getDecoderTableR65C02(InsnSize), Instr, Insn,
-                                   Address, this, STI);
+        Result = maybeDecodeInstruction(getDecoderTableR65C02(InsnSize), Instr,
+                                        Insn, Address, this, STI);
       }
     }
     if (Result == MCDisassembler::Fail) {
       if (STI.getFeatureBits()[MOS::Feature65DTV02]) {
-        Result = decodeInstruction(getDecoderTable65DTV02(InsnSize), Instr,
-                                   Insn, Address, this, STI);
+        Result = maybeDecodeInstruction(getDecoderTable65DTV02(InsnSize), Instr,
+                                        Insn, Address, this, STI);
       }
     }
     if (Result == MCDisassembler::Fail) {
       if (STI.getFeatureBits()[MOS::Feature6502X]) {
-        Result = decodeInstruction(getDecoderTable6502X(InsnSize), Instr, Insn,
-                                   Address, this, STI);
+        Result = maybeDecodeInstruction(getDecoderTable6502X(InsnSize), Instr,
+                                        Insn, Address, this, STI);
       }
     }
     if (Result == MCDisassembler::Fail) {
-      Result = decodeInstruction(getDecoderTable(InsnSize), Instr, Insn,
-                                 Address, this, STI);
+      Result = maybeDecodeInstruction(getDecoderTable(InsnSize), Instr, Insn,
+                                      Address, this, STI);
     }
     if (Result != MCDisassembler::Fail) {
       Size = InsnSize;

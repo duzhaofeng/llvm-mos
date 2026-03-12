@@ -15,6 +15,7 @@
 #include "MCTargetDesc/MOSMCTargetDesc.h"
 #include "MOSMCExpr.h"
 
+#include "llvm/MC/MCAsmInfo.h"
 #include "llvm/MC/MCExpr.h"
 #include "llvm/MC/MCInst.h"
 #include "llvm/MC/MCInstrDesc.h"
@@ -67,13 +68,13 @@ void MOSInstPrinter::printOperand(const MCInst *MI, unsigned OpNo,
     // Format mos16 immediates using formatImm.
     if (const auto *MME = dyn_cast<MOSMCExpr>(Op.getExpr())) {
       int64_t Value = 0;
-      if (MME->getKind() == MOSMCExpr::VK_MOS_IMM16 &&
+      if (MME->getKind() == MOSMCExpr::VK_IMM16 &&
           MME->getSubExpr()->evaluateAsAbsolute(Value)) {
         OS << "mos16(" << formatImm(Value) << ')';
         return;
       }
     }
-    Op.getExpr()->print(OS, &MAI);
+    MAI.printExpr(OS, *Op.getExpr());
   }
 }
 

@@ -28,7 +28,6 @@ add_llvm_target(MOSCodeGen
   MOSCopyOpt.cpp
   MOSFrameLowering.cpp
   MOSISelLowering.cpp
-  MOSIncDecPhi.cpp
   MOSIndexIV.cpp
   MOSInlineAsmLowering.cpp
   MOSInsertCopies.cpp
@@ -60,6 +59,7 @@ add_llvm_target(MOSCodeGen
   AsmPrinter
   BinaryFormat
   CodeGen
+  CodeGenTypes
   Core
   GlobalISel
   IPO
@@ -73,6 +73,7 @@ add_llvm_target(MOSCodeGen
   SelectionDAG
   Support
   Target
+  TargetParser
   TransformUtils
 
   ADD_TO_COMPONENT

@@ -12,7 +12,6 @@
 
 #include "llvm/MC/MCAsmBackend.h"
 #include "llvm/MC/MCFixup.h"
-#include "llvm/MC/MCFixupKindInfo.h"
 
 namespace llvm {
 namespace MOS {
@@ -51,8 +50,8 @@ namespace fixups {} // end of namespace fixups
 
 class MOSFixupKinds {
 public:
-  const static MCFixupKindInfo &getFixupKindInfo(const MOS::Fixups Kind,
-                                                 const MCAsmBackend *Alternative);
+  static MCFixupKindInfo getFixupKindInfo(const MOS::Fixups Kind,
+                                          const MCAsmBackend *Alternative);
 };
 } // namespace llvm
 

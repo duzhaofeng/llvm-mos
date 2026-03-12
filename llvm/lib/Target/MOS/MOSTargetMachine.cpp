@@ -36,7 +36,6 @@
 #include "MOS.h"
 #include "MOSCombiner.h"
 #include "MOSCopyOpt.h"
-#include "MOSIncDecPhi.h"
 #include "MOSIndexIV.h"
 #include "MOSInsertCopies.h"
 #include "MOSInternalize.h"
@@ -62,7 +61,6 @@ extern "C" LLVM_EXTERNAL_VISIBILITY void LLVMInitializeMOSTarget() {
   initializeGlobalISel(PR);
   initializeMOSCombinerPass(PR);
   initializeMOSCopyOptPass(PR);
-  initializeMOSIncDecPhiPass(PR);
   initializeMOSInsertCopiesPass(PR);
   initializeMOSInternalizePass(PR);
   initializeMOSLateOptimizationPass(PR);
@@ -126,7 +124,7 @@ MOSTargetMachine::getSubtargetImpl(const Function &F) const {
 
 TargetTransformInfo
 MOSTargetMachine::getTargetTransformInfo(const Function &F) const {
-  return TargetTransformInfo(MOSTTIImpl(this, F));
+  return TargetTransformInfo(std::make_unique<MOSTTIImpl>(this, F));
 }
 
 void MOSTargetMachine::registerPassBuilderCallbacks(PassBuilder &PB) {
@@ -174,6 +172,11 @@ MachineFunctionInfo *MOSTargetMachine::createMachineFunctionInfo(
       Allocator, F, static_cast<const MOSSubtarget *>(STI));
 }
 
+ScheduleDAGInstrs *
+MOSTargetMachine::createMachineScheduler(MachineSchedContext *C) const {
+  return new ScheduleDAGMILive(C, std::make_unique<MOSSchedStrategy>(C));
+}
+
 //===----------------------------------------------------------------------===//
 // Pass Pipeline Configuration
 //===----------------------------------------------------------------------===//
@@ -215,9 +218,6 @@ public:
   void addPreSched2() override;
   void addPreEmitPass() override;
 
-  ScheduleDAGInstrs *
-  createMachineScheduler(MachineSchedContext *C) const override;
-
   std::unique_ptr<CSEConfigBase> getCSEConfig() const override;
 };
 } // namespace
@@ -245,7 +245,6 @@ bool MOSPassConfig::addIRTranslator() {
 void MOSPassConfig::addPreLegalizeMachineIR() {
   if (getOptLevel() != CodeGenOptLevel::None) {
     addPass(createMOSCombiner());
-    addPass(createMOSIncDecPhiPass());
     addPass(createMOSShiftRotateChainPass());
   }
 }
@@ -324,11 +323,6 @@ void MOSPassConfig::addPreSched2() {
 }
 
 void MOSPassConfig::addPreEmitPass() { addPass(&BranchRelaxationPassID); }
-
-ScheduleDAGInstrs *
-MOSPassConfig::createMachineScheduler(MachineSchedContext *C) const {
-  return new ScheduleDAGMILive(C, std::make_unique<MOSSchedStrategy>(C));
-}
 
 namespace {
 

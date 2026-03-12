@@ -21,11 +21,11 @@
 
 namespace llvm {
 
+class MOSSubtarget;
+
 class MOSInstrInfo : public MOSGenInstrInfo {
 public:
-  MOSInstrInfo();
-
-  bool isReallyTriviallyReMaterializable(const MachineInstr &MI) const override;
+  MOSInstrInfo(const MOSSubtarget &STI);
 
   Register isLoadFromStackSlot(const MachineInstr &MI,
                                int &FrameIndex) const override;
@@ -35,8 +35,7 @@ public:
 
   void reMaterialize(MachineBasicBlock &MBB, MachineBasicBlock::iterator MI,
                      Register DestReg, unsigned SubIdx,
-                     const MachineInstr &Orig,
-                     const TargetRegisterInfo &TRI) const override;
+                     const MachineInstr &Orig) const override;
 
   MachineInstr *commuteInstructionImpl(MachineInstr &MI, bool NewMI,
                                        unsigned OpIdx1,
@@ -74,37 +73,34 @@ public:
                             RegScavenger *RS = nullptr) const override;
 
   void copyPhysReg(MachineBasicBlock &MBB, MachineBasicBlock::iterator MI,
-                   const DebugLoc &DL, MCRegister DestReg, MCRegister SrcReg,
+                   const DebugLoc &DL, Register DestReg, Register SrcReg,
                    bool KillSrc, bool RenamableDest,
                    bool RenamableSrc) const override;
 
-  void storeRegToStackSlot(MachineBasicBlock &MBB,
-                           MachineBasicBlock::iterator MI, Register SrcReg,
-                           bool isKill, int FrameIndex,
-                           const TargetRegisterClass *RC,
-                           const TargetRegisterInfo *TRI,
-                           Register VReg) const override;
+  void storeRegToStackSlot(
+      MachineBasicBlock &MBB, MachineBasicBlock::iterator MI, Register SrcReg,
+      bool isKill, int FrameIndex, const TargetRegisterClass *RC,
+      Register VReg,
+      MachineInstr::MIFlag Flags = MachineInstr::NoFlags) const override;
 
   const TargetRegisterClass *canFoldCopy(const MachineInstr &MI,
                                          const TargetInstrInfo &TII,
                                          unsigned FoldIdx) const override;
 
-  void loadRegFromStackSlot(MachineBasicBlock &MBB,
-                            MachineBasicBlock::iterator MI, Register DestReg,
-                            int FrameIndex, const TargetRegisterClass *RC,
-                            const TargetRegisterInfo *TRI,
-                            Register VReg) const override;
+  void loadRegFromStackSlot(
+      MachineBasicBlock &MBB, MachineBasicBlock::iterator MI, Register DestReg,
+      int FrameIndex, const TargetRegisterClass *RC, Register VReg,
+      unsigned SubReg = 0,
+      MachineInstr::MIFlag Flags = MachineInstr::NoFlags) const override;
 
   void loadStoreRegStackSlot(MachineBasicBlock &MBB,
                              MachineBasicBlock::iterator MI, Register Reg,
                              bool IsKill, int FrameIndex,
                              const TargetRegisterClass *RC,
-                             const TargetRegisterInfo *TRI, bool IsLoad) const;
+                             MachineInstr::MIFlag Flags, bool IsLoad) const;
 
   const TargetRegisterClass *
-  getRegClass(const MCInstrDesc &MCID, unsigned OpNum,
-              const TargetRegisterInfo *TRI,
-              const MachineFunction &MF) const override;
+  getRegClass(const MCInstrDesc &MCID, unsigned OpNum) const override;
 
   bool expandPostRAPseudo(MachineInstr &MI) const override;
 
@@ -128,6 +124,8 @@ public:
                                     unsigned OpIdx) const override;
 
 private:
+  const MOSSubtarget *STI;
+
   void copyPhysRegImpl(MachineIRBuilder &Builder, Register DestReg,
                        Register SrcReg, bool Force = false,
                        bool KillSrc = false) const;

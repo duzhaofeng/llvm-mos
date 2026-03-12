@@ -6,7 +6,10 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "MOSELFObjectWriter.h"
+
 #include "MCTargetDesc/MOSFixupKinds.h"
+#include "MCTargetDesc/MOSMCExpr.h"
 #include "MCTargetDesc/MOSMCTargetDesc.h"
 
 #include "llvm/BinaryFormat/ELF.h"
@@ -21,53 +24,45 @@
 
 namespace llvm {
 
-/// Writes MOS machine code into an ELF32 object file.
-class MOSELFObjectWriter : public MCELFObjectTargetWriter {
-public:
-  explicit MOSELFObjectWriter(uint8_t OSABI);
-
-  unsigned getRelocType(MCContext &Ctx, const MCValue &Target,
-                        const MCFixup &Fixup, bool IsPCRel) const override;
-};
-
 MOSELFObjectWriter::MOSELFObjectWriter(uint8_t OSABI)
     : MCELFObjectTargetWriter(false, OSABI, ELF::EM_MOS, true) {}
 
-unsigned MOSELFObjectWriter::getRelocType(MCContext &Ctx, const MCValue &Target,
-                                          const MCFixup &Fixup,
+unsigned MOSELFObjectWriter::getRelocType(const MCFixup &Fixup,
+                                          const MCValue &Target,
                                           bool IsPCRel) const {
-  MCSymbolRefExpr::VariantKind Modifier = Target.getAccessVariant();
-  switch ((unsigned)Fixup.getKind()) {
+  unsigned Kind = Fixup.getKind();
+  auto Specifier = static_cast<MOSMCExpr::VariantKind>(Target.getSpecifier());
+  switch (Kind) {
   case FK_Data_1:
-    switch (Modifier) {
+    switch (Specifier) {
     default:
-      llvm_unreachable("Unsupported Modifier");
-    case MCSymbolRefExpr::VK_None:
-    case MCSymbolRefExpr::VK_MOS_ADDR8:
+      llvm_unreachable("Unsupported Specifier");
+    case MOSMCExpr::VK_NONE:
+    case MOSMCExpr::VK_ADDR8:
       return ELF::R_MOS_ADDR8;
-    case MCSymbolRefExpr::VK_MOS_ADDR16_LO:
+    case MOSMCExpr::VK_ADDR16_LO:
       return ELF::R_MOS_ADDR16_LO;
-    case MCSymbolRefExpr::VK_MOS_ADDR16_HI:
+    case MOSMCExpr::VK_ADDR16_HI:
       return ELF::R_MOS_ADDR16_HI;
-    case MCSymbolRefExpr::VK_MOS_ADDR24_BANK:
+    case MOSMCExpr::VK_ADDR24_BANK:
       return ELF::R_MOS_ADDR24_BANK;
-    case MCSymbolRefExpr::VK_MOS_ADDR24_SEGMENT_LO:
+    case MOSMCExpr::VK_ADDR24_SEGMENT_LO:
       return ELF::R_MOS_ADDR24_SEGMENT_LO;
-    case MCSymbolRefExpr::VK_MOS_ADDR24_SEGMENT_HI:
+    case MOSMCExpr::VK_ADDR24_SEGMENT_HI:
       return ELF::R_MOS_ADDR24_SEGMENT_HI;
-    case MCSymbolRefExpr::VK_MOS_ADDR13:
+    case MOSMCExpr::VK_ADDR13:
       return ELF::R_MOS_ADDR13;
     }
   case FK_Data_2:
-    switch (Modifier) {
+    switch (Specifier) {
     default:
-      llvm_unreachable("Unsupported Modifier");
-    case MCSymbolRefExpr::VK_None:
-    case MCSymbolRefExpr::VK_MOS_ADDR16:
+      llvm_unreachable("Unsupported Specifier");
+    case MOSMCExpr::VK_NONE:
+    case MOSMCExpr::VK_ADDR16:
       return ELF::R_MOS_ADDR16;
-    case MCSymbolRefExpr::VK_MOS_ADDR13:
+    case MOSMCExpr::VK_ADDR13:
       return ELF::R_MOS_ADDR13;
-    case MCSymbolRefExpr::VK_MOS_ADDR24_SEGMENT:
+    case MOSMCExpr::VK_ADDR24_SEGMENT:
       return ELF::R_MOS_ADDR24_SEGMENT;
     }
 
@@ -95,9 +90,9 @@ unsigned MOSELFObjectWriter::getRelocType(MCContext &Ctx, const MCValue &Target,
     return ELF::R_MOS_PCREL_8;
   case MOS::PCRel16:
     return ELF::R_MOS_PCREL_16;
-  case MCFixupKind::FK_Data_4:
+  case FK_Data_4:
     return ELF::R_MOS_FK_DATA_4;
-  case MCFixupKind::FK_Data_8:
+  case FK_Data_8:
     return ELF::R_MOS_FK_DATA_8;
   case MOS::AddrAsciz:
     return ELF::R_MOS_ADDR_ASCIZ;

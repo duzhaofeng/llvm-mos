@@ -60,7 +60,7 @@ static MCOperand wrapAbsoluteIdxBase(const MachineInstr *MI, MCOperand Op,
   // ADDR16, but that doesn't exist, and it's unclear whether that would
   // conflict with IMM16, which is currently assigned to mos16().
   return MCOperand::createExpr(MOSMCExpr::create(
-      MOSMCExpr::VK_MOS_IMM16, MCConstantExpr::create(Op.getImm(), Ctx),
+      MOSMCExpr::VK_IMM16, MCConstantExpr::create(Op.getImm(), Ctx),
       /*isNegated=*/false, Ctx));
 }
 
@@ -508,6 +508,16 @@ void MOSMCInstLower::lower(const MachineInstr *MI, MCInst &OutMI) {
       return;
     }
   }
+  case MOS::INWImag:
+  case MOS::DEWImag: {
+    OutMI.setOpcode(MI->getOpcode() == MOS::INWImag ? MOS::INW_ZeroPage
+                                                     : MOS::DEW_ZeroPage);
+    MCOperand MCOp;
+    if (!lowerOperand(MI->getOperand(0), MCOp))
+      llvm_unreachable("Failed to lower operand");
+    OutMI.addOperand(MCOp);
+    return;
+  }
   case MOS::DEC:
   case MOS::INC:
     if (MOS::Imag8RegClass.contains(MI->getOperand(0).getReg())) {
@@ -769,7 +779,7 @@ bool MOSMCInstLower::lowerOperand(const MachineOperand &MO, MCOperand &MCOp) {
 
     // Don't add addr8 to expressions that have already been given a fixup type.
     if (auto *E = dyn_cast<MOSMCExpr>(MCOp.getExpr()))
-      if (E->getKind() != MOSMCExpr::VK_MOS_NONE)
+      if (E->getKind() != MOSMCExpr::VK_NONE)
         break;
 
     // This is the last chance to catch values that are attributed a zero-page
@@ -782,7 +792,7 @@ bool MOSMCInstLower::lowerOperand(const MachineOperand &MO, MCOperand &MCOp) {
          (GVar && GVar->getAddressSpace() == MOS::AS_ZeroPage)) &&
         MO.getOffset() >= -128) {
       const MOSMCExpr *Expr =
-          MOSMCExpr::create(MOSMCExpr::VK_MOS_ADDR8, MCOp.getExpr(),
+          MOSMCExpr::create(MOSMCExpr::VK_ADDR8, MCOp.getExpr(),
                             /*isNegated=*/false, Ctx);
       MCOp = MCOperand::createExpr(Expr);
     }
@@ -846,7 +856,7 @@ bool MOSMCInstLower::lowerOperand(const MachineOperand &MO, MCOperand &MCOp) {
       if (Offset)
         Expr = MCBinaryExpr::createAdd(
             Expr, MCConstantExpr::create(Offset, Ctx), Ctx);
-      Expr = MOSMCExpr::create(MOSMCExpr::VK_MOS_ADDR8, Expr,
+      Expr = MOSMCExpr::create(MOSMCExpr::VK_ADDR8, Expr,
                                /*isNegated=*/false, Ctx);
       MCOp = MCOperand::createExpr(Expr);
       break;
@@ -889,7 +899,7 @@ MCOperand MOSMCInstLower::lowerSymbolOperand(const MachineOperand &MO,
     break;
   case MOS::MO_LO:
     if (!ZP) {
-      Expr = MOSMCExpr::create(MOSMCExpr::VK_MOS_ADDR16_LO, Expr,
+      Expr = MOSMCExpr::create(MOSMCExpr::VK_ADDR16_LO, Expr,
                                /*isNegated=*/false, Ctx);
     }
     break;
@@ -897,7 +907,7 @@ MCOperand MOSMCInstLower::lowerSymbolOperand(const MachineOperand &MO,
     if (ZP) {
       Expr = MCConstantExpr::create(0, Ctx);
     } else {
-      Expr = MOSMCExpr::create(MOSMCExpr::VK_MOS_ADDR16_HI, Expr,
+      Expr = MOSMCExpr::create(MOSMCExpr::VK_ADDR16_HI, Expr,
                                /*isNegated=*/false, Ctx);
     }
     break;
@@ -909,7 +919,7 @@ MCOperand MOSMCInstLower::lowerSymbolOperand(const MachineOperand &MO,
     const MachineJumpTableInfo *JTI =
         MO.getParent()->getMF()->getJumpTableInfo();
     const auto &Table = JTI->getJumpTables()[MO.getIndex()];
-    assert(Table.MBBs.size() < 256);
+    assert(Table.MBBs.size() <= 256);
     Expr = MCBinaryExpr::createAdd(
         Expr, MCConstantExpr::create(Table.MBBs.size(), Ctx), Ctx);
     break;

@@ -33,15 +33,15 @@ namespace llvm {
 
 void MOSMCELFStreamer::initSections(bool NoExecStack,
                                     const MCSubtargetInfo &STI) {
-  Has65816Instructions = STI.hasFeature(MOS::FeatureW65816) ||
-                         STI.hasFeature(MOS::Feature65EL02);
+  Has65816Instructions =
+      STI.hasFeature(MOS::FeatureW65816) || STI.hasFeature(MOS::Feature65EL02);
 
   MCContext &Ctx = getContext();
   switchSection(Ctx.getObjectFileInfo()->getTextSection());
   emitCodeAlignment(Align(1), &STI);
 
   if (NoExecStack)
-    switchSection(Ctx.getAsmInfo()->getNonexecutableStackSection(Ctx));
+    switchSection(Ctx.getAsmInfo()->getStackSection(Ctx, false));
 }
 
 static bool HasPrefix(StringRef Name, StringRef Prefix) {
@@ -63,7 +63,8 @@ void MOSMCELFStreamer::changeSection(MCSection *Section, uint32_t Subsection) {
   XState = MXFlagUnknown;
 }
 
-void MOSMCELFStreamer::emitInstruction(const MCInst &Inst, const MCSubtargetInfo &STI) {
+void MOSMCELFStreamer::emitInstruction(const MCInst &Inst,
+                                       const MCSubtargetInfo &STI) {
   auto TSFlags = MCII.get()->get(Inst.getOpcode()).TSFlags;
   emit816MXState(TSFlags & MOS::TSFlagMLow, TSFlags & MOS::TSFlagMHigh,
                  TSFlags & MOS::TSFlagXLow, TSFlags & MOS::TSFlagXHigh);
@@ -73,7 +74,7 @@ void MOSMCELFStreamer::emitInstruction(const MCInst &Inst, const MCSubtargetInfo
 void MOSMCELFStreamer::emitValueImpl(const MCExpr *Value, unsigned Size,
                                      SMLoc Loc) {
   if (const auto *MME = dyn_cast<MOSMCExpr>(Value)) {
-    if (MME->getKind() == MOSMCExpr::VK_MOS_ADDR_ASCIZ) {
+    if (MME->getKind() == MOSMCExpr::VK_ADDR_ASCIZ) {
       emitMosAddrAsciz(MME->getSubExpr(), Size, Loc);
       return;
     }
@@ -85,21 +86,17 @@ void MOSMCELFStreamer::emitMosAddrAsciz(const MCExpr *Value, unsigned Size,
                                         SMLoc Loc) {
   visitUsedExpr(*Value);
   MCDwarfLineEntry::make(this, getCurrentSectionOnly());
-  MCDataFragment *DF = getOrCreateDataFragment();
-
-  DF->getFixups().push_back(
-      MCFixup::create(DF->getContents().size(), Value,
-                      (MCFixupKind)MOS::AddrAsciz, Loc));
-  DF->getContents().resize(DF->getContents().size() + Size, 0);
+  addFixup(Value, (MCFixupKind)MOS::AddrAsciz);
+  SmallVector<char> Zeroes(Size, 0);
+  appendContents(Zeroes);
 }
 
 void MOSMCELFStreamer::emitMappingSymbol(StringRef Name) {
-  auto *Symbol = cast<MCSymbolELF>(getContext().getOrCreateSymbol(
+  auto *Symbol = static_cast<MCSymbolELF *>(getContext().getOrCreateSymbol(
       Name + "." + Twine(MappingSymbolCounter++)));
   emitLabel(Symbol);
   Symbol->setType(ELF::STT_NOTYPE);
   Symbol->setBinding(ELF::STB_LOCAL);
-  Symbol->setExternal(false);
 }
 
 void MOSMCELFStreamer::emit816MXState(bool IsMLow, bool IsMHigh, bool IsXLow,
