@@ -51,9 +51,9 @@ public:
     CallingConv::ID CallConv = F.getCallingConv();
 
     this->IsInterruptHandler =
-        CallConv == CallingConv::MCS51_INTR || F.hasFnAttribute("interrupt");
+      CallConv == CallingConv::AVR_INTR || F.hasFnAttribute("interrupt");
     this->IsSignalHandler =
-        CallConv == CallingConv::MCS51_SIGNAL || F.hasFnAttribute("signal");
+      CallConv == CallingConv::AVR_SIGNAL || F.hasFnAttribute("signal");
   }
 
   MachineFunctionInfo *

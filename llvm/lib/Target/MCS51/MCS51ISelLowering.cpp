@@ -35,7 +35,7 @@ namespace llvm {
 
 MCS51TargetLowering::MCS51TargetLowering(const MCS51TargetMachine &TM,
                                      const MCS51Subtarget &STI)
-    : TargetLowering(TM), Subtarget(STI) {
+  : TargetLowering(TM, STI), Subtarget(STI) {
   // Set up the register classes.
   addRegisterClass(MVT::i8, &MCS51::GPR8RegClass);
   addRegisterClass(MVT::i16, &MCS51::DREGSRegClass);
@@ -198,40 +198,6 @@ MCS51TargetLowering::MCS51TargetLowering(const MCS51TargetMachine &TM,
     // extending 8-bit to 16-bit. This may require infrastructure
     // improvements in how we treat 16-bit "registers" to be feasible.
   }
-
-  // Division rtlib functions (not supported), use divmod functions instead
-  setLibcallName(RTLIB::SDIV_I8, nullptr);
-  setLibcallName(RTLIB::SDIV_I16, nullptr);
-  setLibcallName(RTLIB::SDIV_I32, nullptr);
-  setLibcallName(RTLIB::UDIV_I8, nullptr);
-  setLibcallName(RTLIB::UDIV_I16, nullptr);
-  setLibcallName(RTLIB::UDIV_I32, nullptr);
-
-  // Modulus rtlib functions (not supported), use divmod functions instead
-  setLibcallName(RTLIB::SREM_I8, nullptr);
-  setLibcallName(RTLIB::SREM_I16, nullptr);
-  setLibcallName(RTLIB::SREM_I32, nullptr);
-  setLibcallName(RTLIB::UREM_I8, nullptr);
-  setLibcallName(RTLIB::UREM_I16, nullptr);
-  setLibcallName(RTLIB::UREM_I32, nullptr);
-
-  // Division and modulus rtlib functions
-  setLibcallName(RTLIB::SDIVREM_I8, "__divmodqi4");
-  setLibcallName(RTLIB::SDIVREM_I16, "__divmodhi4");
-  setLibcallName(RTLIB::SDIVREM_I32, "__divmodsi4");
-  setLibcallName(RTLIB::UDIVREM_I8, "__udivmodqi4");
-  setLibcallName(RTLIB::UDIVREM_I16, "__udivmodhi4");
-  setLibcallName(RTLIB::UDIVREM_I32, "__udivmodsi4");
-
-  // Several of the runtime library functions use a special calling conv
-  setLibcallCallingConv(RTLIB::SDIVREM_I8, CallingConv::MCS51_BUILTIN);
-  setLibcallCallingConv(RTLIB::SDIVREM_I16, CallingConv::MCS51_BUILTIN);
-  setLibcallCallingConv(RTLIB::UDIVREM_I8, CallingConv::MCS51_BUILTIN);
-  setLibcallCallingConv(RTLIB::UDIVREM_I16, CallingConv::MCS51_BUILTIN);
-
-  // Trigonometric rtlib functions
-  setLibcallName(RTLIB::SIN_F32, "sin");
-  setLibcallName(RTLIB::COS_F32, "cos");
 
   setMinFunctionAlignment(Align(2));
   setMinimumJumpTableEntries(UINT_MAX);
@@ -578,17 +544,20 @@ SDValue MCS51TargetLowering::LowerDivRem(SDValue Op, SelectionDAG &DAG) const {
   SDValue InChain = DAG.getEntryNode();
 
   TargetLowering::ArgListTy Args;
-  TargetLowering::ArgListEntry Entry;
   for (SDValue const &Value : Op->op_values()) {
-    Entry.Node = Value;
-    Entry.Ty = Value.getValueType().getTypeForEVT(*DAG.getContext());
+    TargetLowering::ArgListEntry Entry(
+        Value, Value.getValueType().getTypeForEVT(*DAG.getContext()));
     Entry.IsSExt = IsSigned;
     Entry.IsZExt = !IsSigned;
     Args.push_back(Entry);
   }
 
-  SDValue Callee = DAG.getExternalSymbol(getLibcallName(LC),
-                                         getPointerTy(DAG.getDataLayout()));
+  RTLIB::LibcallImpl LCImpl = DAG.getLibcalls().getLibcallImpl(LC);
+  if (LCImpl == RTLIB::Unsupported)
+    return SDValue();
+
+  SDValue Callee =
+      DAG.getExternalSymbol(LCImpl, getPointerTy(DAG.getDataLayout()));
 
   Type *RetTy = (Type *)StructType::get(Ty, Ty);
 
@@ -596,7 +565,8 @@ SDValue MCS51TargetLowering::LowerDivRem(SDValue Op, SelectionDAG &DAG) const {
   TargetLowering::CallLoweringInfo CLI(DAG);
   CLI.setDebugLoc(dl)
       .setChain(InChain)
-      .setLibCallee(getLibcallCallingConv(LC), RetTy, Callee, std::move(Args))
+      .setLibCallee(DAG.getLibcalls().getLibcallImplCallingConv(LCImpl), RetTy,
+            Callee, std::move(Args))
       .setInRegister()
       .setSExtResult(IsSigned)
       .setZExtResult(!IsSigned);
@@ -1669,7 +1639,7 @@ SDValue MCS51TargetLowering::LowerCallResult(
                  *DAG.getContext());
 
   // Handle runtime calling convs.
-  if (CallConv == CallingConv::MCS51_BUILTIN) {
+  if (CallConv == CallingConv::AVR_BUILTIN) {
     CCInfo.AnalyzeCallResult(Ins, RetCC_MCS51_BUILTIN);
   } else {
     analyzeReturnValues(Ins, CCInfo, Subtarget.hasTinyEncoding());
@@ -1693,8 +1663,10 @@ SDValue MCS51TargetLowering::LowerCallResult(
 
 bool MCS51TargetLowering::CanLowerReturn(
     CallingConv::ID CallConv, MachineFunction &MF, bool isVarArg,
-    const SmallVectorImpl<ISD::OutputArg> &Outs, LLVMContext &Context) const {
-  if (CallConv == CallingConv::MCS51_BUILTIN) {
+    const SmallVectorImpl<ISD::OutputArg> &Outs, LLVMContext &Context,
+    const Type *RetTy) const {
+  (void)RetTy;
+  if (CallConv == CallingConv::AVR_BUILTIN) {
     SmallVector<CCValAssign, 16> RVLocs;
     CCState CCInfo(CallConv, isVarArg, MF, RVLocs, Context);
     return CCInfo.CheckReturn(Outs, RetCC_MCS51_BUILTIN);
@@ -1720,7 +1692,7 @@ MCS51TargetLowering::LowerReturn(SDValue Chain, CallingConv::ID CallConv,
   MachineFunction &MF = DAG.getMachineFunction();
 
   // Analyze return values.
-  if (CallConv == CallingConv::MCS51_BUILTIN) {
+  if (CallConv == CallingConv::AVR_BUILTIN) {
     CCInfo.AnalyzeReturn(Outs, RetCC_MCS51_BUILTIN);
   } else {
     analyzeReturnValues(Outs, CCInfo, Subtarget.hasTinyEncoding());
@@ -2063,8 +2035,8 @@ static void insertMultibyteShift(MachineInstr &MI, MachineBasicBlock *BB,
       ShrExtendReg = MRI.createVirtualRegister(&MCS51::GPR8RegClass);
       Register Tmp = MRI.createVirtualRegister(&MCS51::GPR8RegClass);
       BuildMI(*BB, MI, dl, TII.get(MCS51::ADDRdRr), Tmp)
-          .addReg(Regs[0].first, 0, Regs[0].second)
-          .addReg(Regs[0].first, 0, Regs[0].second);
+          .addReg(Regs[0].first, RegState::NoFlags, Regs[0].second)
+          .addReg(Regs[0].first, RegState::NoFlags, Regs[0].second);
       BuildMI(*BB, MI, dl, TII.get(MCS51::SBCRdRr), ShrExtendReg)
           .addReg(Tmp)
           .addReg(Tmp);
@@ -2112,7 +2084,7 @@ static void insertMultibyteShift(MachineInstr &MI, MachineBasicBlock *BB,
       size_t Idx = ShiftLeft ? I : Regs.size() - I - 1;
       Register SwapReg = MRI.createVirtualRegister(&MCS51::LD8RegClass);
       BuildMI(*BB, MI, dl, TII.get(MCS51::SWAPRd), SwapReg)
-          .addReg(Regs[Idx].first, 0, Regs[Idx].second);
+          .addReg(Regs[Idx].first, RegState::NoFlags, Regs[Idx].second);
       if (I != 0) {
         Register R = MRI.createVirtualRegister(&MCS51::GPR8RegClass);
         BuildMI(*BB, MI, dl, TII.get(MCS51::EORRdRr), R)
@@ -2148,12 +2120,12 @@ static void insertMultibyteShift(MachineInstr &MI, MachineBasicBlock *BB,
       Register InSubreg = Regs[I].second;
       if (I == (ssize_t)Regs.size() - 1) { // first iteration
         BuildMI(*BB, MI, dl, TII.get(MCS51::ADDRdRr), Out)
-            .addReg(In, 0, InSubreg)
-            .addReg(In, 0, InSubreg);
+        .addReg(In, RegState::NoFlags, InSubreg)
+        .addReg(In, RegState::NoFlags, InSubreg);
       } else {
         BuildMI(*BB, MI, dl, TII.get(MCS51::ADCRdRr), Out)
-            .addReg(In, 0, InSubreg)
-            .addReg(In, 0, InSubreg);
+        .addReg(In, RegState::NoFlags, InSubreg)
+        .addReg(In, RegState::NoFlags, InSubreg);
       }
       Regs[I] = std::pair(Out, 0);
     }
@@ -2167,9 +2139,11 @@ static void insertMultibyteShift(MachineInstr &MI, MachineBasicBlock *BB,
       Register InSubreg = Regs[I].second;
       if (I == 0) {
         unsigned Opc = ArithmeticShift ? MCS51::ASRRd : MCS51::LSRRd;
-        BuildMI(*BB, MI, dl, TII.get(Opc), Out).addReg(In, 0, InSubreg);
+        BuildMI(*BB, MI, dl, TII.get(Opc), Out)
+            .addReg(In, RegState::NoFlags, InSubreg);
       } else {
-        BuildMI(*BB, MI, dl, TII.get(MCS51::RORRd), Out).addReg(In, 0, InSubreg);
+        BuildMI(*BB, MI, dl, TII.get(MCS51::RORRd), Out)
+            .addReg(In, RegState::NoFlags, InSubreg);
       }
       Regs[I] = std::pair(Out, 0);
     }
@@ -2230,26 +2204,26 @@ MCS51TargetLowering::insertWideShift(MachineInstr &MI,
       (Opc != ISD::SRA || (ShiftAmt < 16 || ShiftAmt >= 22))) {
     // Use the resulting registers starting with the least significant byte.
     BuildMI(*BB, MI, dl, TII.get(MCS51::REG_SEQUENCE), MI.getOperand(0).getReg())
-        .addReg(Registers[3].first, 0, Registers[3].second)
+      .addReg(Registers[3].first, RegState::NoFlags, Registers[3].second)
         .addImm(MCS51::sub_lo)
-        .addReg(Registers[2].first, 0, Registers[2].second)
+      .addReg(Registers[2].first, RegState::NoFlags, Registers[2].second)
         .addImm(MCS51::sub_hi);
     BuildMI(*BB, MI, dl, TII.get(MCS51::REG_SEQUENCE), MI.getOperand(1).getReg())
-        .addReg(Registers[1].first, 0, Registers[1].second)
+      .addReg(Registers[1].first, RegState::NoFlags, Registers[1].second)
         .addImm(MCS51::sub_lo)
-        .addReg(Registers[0].first, 0, Registers[0].second)
+      .addReg(Registers[0].first, RegState::NoFlags, Registers[0].second)
         .addImm(MCS51::sub_hi);
   } else {
     // Use the resulting registers starting with the most significant byte.
     BuildMI(*BB, MI, dl, TII.get(MCS51::REG_SEQUENCE), MI.getOperand(1).getReg())
-        .addReg(Registers[0].first, 0, Registers[0].second)
+      .addReg(Registers[0].first, RegState::NoFlags, Registers[0].second)
         .addImm(MCS51::sub_hi)
-        .addReg(Registers[1].first, 0, Registers[1].second)
+      .addReg(Registers[1].first, RegState::NoFlags, Registers[1].second)
         .addImm(MCS51::sub_lo);
     BuildMI(*BB, MI, dl, TII.get(MCS51::REG_SEQUENCE), MI.getOperand(0).getReg())
-        .addReg(Registers[2].first, 0, Registers[2].second)
+      .addReg(Registers[2].first, RegState::NoFlags, Registers[2].second)
         .addImm(MCS51::sub_hi)
-        .addReg(Registers[3].first, 0, Registers[3].second)
+      .addReg(Registers[3].first, RegState::NoFlags, Registers[3].second)
         .addImm(MCS51::sub_lo);
   }
 

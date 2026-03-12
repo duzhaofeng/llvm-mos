@@ -36,13 +36,18 @@
 namespace llvm {
 
 MCS51InstrInfo::MCS51InstrInfo(MCS51Subtarget &STI)
-    : MCS51GenInstrInfo(MCS51::ADJCALLSTACKDOWN, MCS51::ADJCALLSTACKUP), RI(),
-      STI(STI) {}
+    : MCS51GenInstrInfo(STI, RI, MCS51::ADJCALLSTACKDOWN,
+                        MCS51::ADJCALLSTACKUP),
+      RI(), STI(STI) {}
 
 void MCS51InstrInfo::copyPhysReg(MachineBasicBlock &MBB,
                                MachineBasicBlock::iterator MI,
-                               const DebugLoc &DL, MCRegister DestReg,
-                               MCRegister SrcReg, bool KillSrc) const {
+                               const DebugLoc &DL, Register DestReg,
+                               Register SrcReg, bool KillSrc,
+                               bool RenamableDest,
+                               bool RenamableSrc) const {
+  (void)RenamableDest;
+  (void)RenamableSrc;
   const MCS51RegisterInfo &TRI = *STI.getRegisterInfo();
   unsigned Opc;
 
@@ -132,7 +137,9 @@ Register MCS51InstrInfo::isStoreToStackSlot(const MachineInstr &MI,
 void MCS51InstrInfo::storeRegToStackSlot(
     MachineBasicBlock &MBB, MachineBasicBlock::iterator MI, Register SrcReg,
     bool isKill, int FrameIndex, const TargetRegisterClass *RC,
-    const TargetRegisterInfo *TRI, Register VReg) const {
+    Register VReg, MachineInstr::MIFlag Flags) const {
+  (void)VReg;
+  (void)Flags;
   MachineFunction &MF = *MBB.getParent();
   MCS51MachineFunctionInfo *AFI = MF.getInfo<MCS51MachineFunctionInfo>();
 
@@ -145,10 +152,11 @@ void MCS51InstrInfo::storeRegToStackSlot(
       MachineMemOperand::MOStore, MFI.getObjectSize(FrameIndex),
       MFI.getObjectAlign(FrameIndex));
 
+  const MCS51RegisterInfo &TRI = *STI.getRegisterInfo();
   unsigned Opcode = 0;
-  if (TRI->isTypeLegalForClass(*RC, MVT::i8)) {
+  if (TRI.isTypeLegalForClass(*RC, MVT::i8)) {
     Opcode = MCS51::STDPtrQRr;
-  } else if (TRI->isTypeLegalForClass(*RC, MVT::i16)) {
+  } else if (TRI.isTypeLegalForClass(*RC, MVT::i16)) {
     Opcode = MCS51::STDWPtrQRr;
   } else {
     llvm_unreachable("Cannot store this register into a stack slot!");
@@ -165,8 +173,11 @@ void MCS51InstrInfo::loadRegFromStackSlot(MachineBasicBlock &MBB,
                                         MachineBasicBlock::iterator MI,
                                         Register DestReg, int FrameIndex,
                                         const TargetRegisterClass *RC,
-                                        const TargetRegisterInfo *TRI,
-                                        Register VReg) const {
+                                        Register VReg, unsigned SubReg,
+                                        MachineInstr::MIFlag Flags) const {
+  (void)VReg;
+  (void)SubReg;
+  (void)Flags;
   MachineFunction &MF = *MBB.getParent();
   const MachineFrameInfo &MFI = MF.getFrameInfo();
 
@@ -175,10 +186,11 @@ void MCS51InstrInfo::loadRegFromStackSlot(MachineBasicBlock &MBB,
       MachineMemOperand::MOLoad, MFI.getObjectSize(FrameIndex),
       MFI.getObjectAlign(FrameIndex));
 
+  const MCS51RegisterInfo &TRI = *STI.getRegisterInfo();
   unsigned Opcode = 0;
-  if (TRI->isTypeLegalForClass(*RC, MVT::i8)) {
+  if (TRI.isTypeLegalForClass(*RC, MVT::i8)) {
     Opcode = MCS51::LDDRdPtrQ;
-  } else if (TRI->isTypeLegalForClass(*RC, MVT::i16)) {
+  } else if (TRI.isTypeLegalForClass(*RC, MVT::i16)) {
     // Opcode = MCS51::LDDWRdPtrQ;
     //: FIXME: remove this once PR13375 gets fixed
     Opcode = MCS51::LDDWRdYQ;

@@ -29,16 +29,14 @@ namespace {
 /// Lowers LLVM IR (in DAG form) to MCS51 MC instructions (in DAG form).
 class MCS51DAGToDAGISel : public SelectionDAGISel {
 public:
-  static char ID;
-
   MCS51DAGToDAGISel() = delete;
 
   MCS51DAGToDAGISel(MCS51TargetMachine &TM, CodeGenOptLevel OptLevel)
-      : SelectionDAGISel(ID, TM, OptLevel), Subtarget(nullptr) {}
+  : SelectionDAGISel(TM, OptLevel), Subtarget(nullptr) {}
 
   bool runOnMachineFunction(MachineFunction &MF) override;
 
-  bool SelectAddr(SDNode *Op, SDValue N, SDValue &Base, SDValue &Disp);
+  bool SelectAddr(SDValue N, SDValue &Base, SDValue &Disp);
 
   bool selectIndexedLoad(SDNode *N);
   unsigned selectIndexedProgMemLoad(const LoadSDNode *LD, MVT VT, int Bank);
@@ -60,20 +58,27 @@ private:
   const MCS51Subtarget *Subtarget;
 };
 
+class MCS51DAGToDAGISelLegacy : public SelectionDAGISelLegacy {
+public:
+  static char ID;
+  MCS51DAGToDAGISelLegacy(MCS51TargetMachine &TM, CodeGenOptLevel OptLevel)
+      : SelectionDAGISelLegacy(
+            ID, std::make_unique<MCS51DAGToDAGISel>(TM, OptLevel)) {}
+};
+
 } // namespace
 
-char MCS51DAGToDAGISel::ID = 0;
+char MCS51DAGToDAGISelLegacy::ID = 0;
 
-INITIALIZE_PASS(MCS51DAGToDAGISel, DEBUG_TYPE, PASS_NAME, false, false)
+INITIALIZE_PASS(MCS51DAGToDAGISelLegacy, DEBUG_TYPE, PASS_NAME, false, false)
 
 bool MCS51DAGToDAGISel::runOnMachineFunction(MachineFunction &MF) {
   Subtarget = &MF.getSubtarget<MCS51Subtarget>();
   return SelectionDAGISel::runOnMachineFunction(MF);
 }
 
-bool MCS51DAGToDAGISel::SelectAddr(SDNode *Op, SDValue N, SDValue &Base,
-                                 SDValue &Disp) {
-  SDLoc dl(Op);
+bool MCS51DAGToDAGISel::SelectAddr(SDValue N, SDValue &Base, SDValue &Disp) {
+  SDLoc dl(N);
   auto DL = CurDAG->getDataLayout();
   MVT PtrVT = getTargetLowering()->getPointerTy(DL);
 
@@ -112,12 +117,8 @@ bool MCS51DAGToDAGISel::SelectAddr(SDNode *Op, SDValue N, SDValue &Base,
       return true;
     }
 
-    // The value type of the memory instruction determines what is the maximum
-    // offset allowed.
-    MVT VT = cast<MemSDNode>(Op)->getMemoryVT().getSimpleVT();
-
     // We only accept offsets that fit in 6 bits (unsigned).
-    if (isUInt<6>(RHSC) && (VT == MVT::i8 || VT == MVT::i16)) {
+    if (isUInt<6>(RHSC)) {
       Base = N.getOperand(0);
       Disp = CurDAG->getTargetConstant(RHSC, dl, MVT::i8);
 
@@ -225,7 +226,7 @@ bool MCS51DAGToDAGISel::SelectInlineAsmMemoryOperand(
   if (Op->getOpcode() == ISD::FrameIndex) {
     SDValue Base, Disp;
 
-    if (SelectAddr(Op.getNode(), Op, Base, Disp)) {
+    if (SelectAddr(Op, Base, Disp)) {
       OutOps.push_back(Base);
       OutOps.push_back(Disp);
 
@@ -586,5 +587,5 @@ bool MCS51DAGToDAGISel::trySelect(SDNode *N) {
 
 FunctionPass *llvm::createMCS51ISelDag(MCS51TargetMachine &TM,
                                      CodeGenOptLevel OptLevel) {
-  return new MCS51DAGToDAGISel(TM, OptLevel);
+  return new MCS51DAGToDAGISelLegacy(TM, OptLevel);
 }

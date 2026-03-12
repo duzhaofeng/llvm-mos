@@ -31,7 +31,7 @@ FunctionPass *createMCS51ExpandPseudoPass();
 FunctionPass *createMCS51FrameAnalyzerPass();
 FunctionPass *createMCS51BranchSelectionPass();
 
-void initializeMCS51DAGToDAGISelPass(PassRegistry &);
+void initializeMCS51DAGToDAGISelLegacyPass(PassRegistry &);
 void initializeMCS51ExpandPseudoPass(PassRegistry &);
 void initializeMCS51ShiftExpandPass(PassRegistry &);
 

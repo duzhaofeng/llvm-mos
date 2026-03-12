@@ -19,14 +19,13 @@ class MCS51Inst<dag outs, dag ins, string asmstr, list<dag> pattern>
   dag InOperandList = ins;
   let AsmString = asmstr;
   let Pattern = pattern;
-
-  field bits<32> SoftFail = 0;
 }
 
 /// A 16-bit MCS51 instruction.
 class MCS51Inst16<dag outs, dag ins, string asmstr, list<dag> pattern>
     : MCS51Inst<outs, ins, asmstr, pattern> {
   field bits<16> Inst;
+  field bits<16> SoftFail = 0;
 
   let Size = 2;
 }
@@ -35,6 +34,7 @@ class MCS51Inst16<dag outs, dag ins, string asmstr, list<dag> pattern>
 class MCS51Inst32<dag outs, dag ins, string asmstr, list<dag> pattern>
     : MCS51Inst<outs, ins, asmstr, pattern> {
   field bits<32> Inst;
+  field bits<32> SoftFail = 0;
 
   let Size = 4;
 }

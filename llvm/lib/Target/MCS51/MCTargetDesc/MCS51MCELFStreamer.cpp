@@ -23,21 +23,12 @@ using namespace llvm;
 void MCS51MCELFStreamer::emitValueForModiferKind(
     const MCSymbol *Sym, unsigned SizeInBytes, SMLoc Loc,
     MCS51MCExpr::VariantKind ModifierKind) {
-  MCSymbolRefExpr::VariantKind Kind = MCSymbolRefExpr::VK_MCS51_NONE;
-  if (ModifierKind == MCS51MCExpr::VK_MCS51_None) {
-    Kind = MCSymbolRefExpr::VK_MCS51_DIFF8;
-    if (SizeInBytes == SIZE_LONG)
-      Kind = MCSymbolRefExpr::VK_MCS51_DIFF32;
-    else if (SizeInBytes == SIZE_WORD)
-      Kind = MCSymbolRefExpr::VK_MCS51_DIFF16;
-  } else if (ModifierKind == MCS51MCExpr::VK_MCS51_LO8)
-    Kind = MCSymbolRefExpr::VK_MCS51_LO8;
-  else if (ModifierKind == MCS51MCExpr::VK_MCS51_HI8)
-    Kind = MCSymbolRefExpr::VK_MCS51_HI8;
-  else if (ModifierKind == MCS51MCExpr::VK_MCS51_HH8)
-    Kind = MCSymbolRefExpr::VK_MCS51_HLO8;
-  MCELFStreamer::emitValue(MCSymbolRefExpr::create(Sym, Kind, getContext()),
-                           SizeInBytes, Loc);
+  const MCExpr *Expr = MCSymbolRefExpr::create(Sym, getContext());
+
+  if (ModifierKind != MCS51MCExpr::VK_MCS51_None)
+    Expr = MCS51MCExpr::create(ModifierKind, Expr, false, getContext());
+
+  MCELFStreamer::emitValue(Expr, SizeInBytes, Loc);
 }
 
 namespace llvm {

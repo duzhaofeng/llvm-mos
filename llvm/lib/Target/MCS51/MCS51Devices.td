@@ -20,6 +20,29 @@ class Family<string name, list<SubtargetFeature> i>
     : FeatureSet<
           name, !strconcat("The device is a part of the ", name, " family"), i>;
 
+//===---------------------------------------------------------------------===//
+// Phase-0 MCS-51/MCS-251 rebuild scaffold
+//===---------------------------------------------------------------------===//
+// These feature definitions are the seed for rebuilding this backend around
+// real 8051 semantics. They intentionally coexist with the legacy AVR-derived
+// definitions below so the transition can proceed incrementally.
+
+def FeatureMCS51Base
+    : SubtargetFeature<"mcs51-base", "HasMCS51Base", "true",
+                       "Classic MCS-51 base ISA">;
+
+def FeatureMCS51BitAddressable
+    : SubtargetFeature<"mcs51-bitaddr", "HasMCS51BitAddressable", "true",
+                       "Bit-addressable data and bit branch operations">;
+
+def FeatureMCS51DPTR
+    : SubtargetFeature<"mcs51-dptr", "HasMCS51DPTR", "true",
+                       "DPTR-based data/code addressing">;
+
+def FeatureMCS251
+    : SubtargetFeature<"mcs251-ext", "HasMCS251", "true",
+                       "MCS-251 extension set">;
+
 // The device has SRAM, and supports the bare minimum of
 // SRAM-relevant instructions.
 //
@@ -38,6 +61,13 @@ def FeatureSRAM : SubtargetFeature<"sram", "HasSRAM", "true",
 def FeatureJMPCALL : SubtargetFeature<"jmpcall", "HasJMPCALL", "true",
                                       "The device supports the `JMP` and "
                                       "`CALL` instructions">;
+
+def FamilyMCS51Classic
+    : Family<"mcs51", [FeatureMCS51Base, FeatureMCS51BitAddressable,
+                        FeatureMCS51DPTR, FeatureSRAM, FeatureJMPCALL]>;
+
+def FamilyMCS251
+    : Family<"mcs251", FamilyMCS51Classic.Implies#[FeatureMCS251]>;
 
 // The device supports the indirect branches `IJMP` and `ICALL`.
 def FeatureIJMPCALL : SubtargetFeature<"ijmpcall", "HasSRAMIJMPCALL", "true",
@@ -135,24 +165,24 @@ class ELFArch<string name>
     : SubtargetFeature<"", "ELFArch", !strconcat("ELF::", name), "">;
 
 // ELF e_flags architecture values
-def ELFArchMCS511 : ELFArch<"EF_MCS51_ARCH_MCS511">;
-def ELFArchMCS512 : ELFArch<"EF_MCS51_ARCH_MCS512">;
-def ELFArchMCS5125 : ELFArch<"EF_MCS51_ARCH_MCS5125">;
-def ELFArchMCS513 : ELFArch<"EF_MCS51_ARCH_MCS513">;
-def ELFArchMCS5131 : ELFArch<"EF_MCS51_ARCH_MCS5131">;
-def ELFArchMCS5135 : ELFArch<"EF_MCS51_ARCH_MCS5135">;
-def ELFArchMCS514 : ELFArch<"EF_MCS51_ARCH_MCS514">;
-def ELFArchMCS515 : ELFArch<"EF_MCS51_ARCH_MCS515">;
-def ELFArchMCS5151 : ELFArch<"EF_MCS51_ARCH_MCS5151">;
-def ELFArchMCS516 : ELFArch<"EF_MCS51_ARCH_MCS516">;
-def ELFArchTiny : ELFArch<"EF_MCS51_ARCH_MCS51TINY">;
-def ELFArchXMEGA1 : ELFArch<"EF_MCS51_ARCH_XMEGA1">;
-def ELFArchXMEGA2 : ELFArch<"EF_MCS51_ARCH_XMEGA2">;
-def ELFArchXMEGA3 : ELFArch<"EF_MCS51_ARCH_XMEGA3">;
-def ELFArchXMEGA4 : ELFArch<"EF_MCS51_ARCH_XMEGA4">;
-def ELFArchXMEGA5 : ELFArch<"EF_MCS51_ARCH_XMEGA5">;
-def ELFArchXMEGA6 : ELFArch<"EF_MCS51_ARCH_XMEGA6">;
-def ELFArchXMEGA7 : ELFArch<"EF_MCS51_ARCH_XMEGA7">;
+def ELFArchMCS511 : ELFArch<"EF_AVR_ARCH_AVR1">;
+def ELFArchMCS512 : ELFArch<"EF_AVR_ARCH_AVR2">;
+def ELFArchMCS5125 : ELFArch<"EF_AVR_ARCH_AVR25">;
+def ELFArchMCS513 : ELFArch<"EF_AVR_ARCH_AVR3">;
+def ELFArchMCS5131 : ELFArch<"EF_AVR_ARCH_AVR31">;
+def ELFArchMCS5135 : ELFArch<"EF_AVR_ARCH_AVR35">;
+def ELFArchMCS514 : ELFArch<"EF_AVR_ARCH_AVR4">;
+def ELFArchMCS515 : ELFArch<"EF_AVR_ARCH_AVR5">;
+def ELFArchMCS5151 : ELFArch<"EF_AVR_ARCH_AVR51">;
+def ELFArchMCS516 : ELFArch<"EF_AVR_ARCH_AVR6">;
+def ELFArchTiny : ELFArch<"EF_AVR_ARCH_AVRTINY">;
+def ELFArchXMEGA1 : ELFArch<"EF_AVR_ARCH_XMEGA1">;
+def ELFArchXMEGA2 : ELFArch<"EF_AVR_ARCH_XMEGA2">;
+def ELFArchXMEGA3 : ELFArch<"EF_AVR_ARCH_XMEGA3">;
+def ELFArchXMEGA4 : ELFArch<"EF_AVR_ARCH_XMEGA4">;
+def ELFArchXMEGA5 : ELFArch<"EF_AVR_ARCH_XMEGA5">;
+def ELFArchXMEGA6 : ELFArch<"EF_AVR_ARCH_XMEGA6">;
+def ELFArchXMEGA7 : ELFArch<"EF_AVR_ARCH_XMEGA7">;
 
 //===---------------------------------------------------------------------===//
 // MCS51 Families
@@ -232,6 +262,12 @@ def FeatureSetSpecial
 class Device<string Name, Family Fam, ELFArch Arch,
              list<SubtargetFeature> ExtraFeatures = []>
     : Processor<Name, NoItineraries, !listconcat([Fam, Arch], ExtraFeatures)>;
+
+// Rebuild bootstrap targets.
+// NOTE: ELF architecture values are placeholders until dedicated 8051 values
+// are wired through ELF support.
+def : Device<"mcs51", FamilyMCS51Classic, ELFArchMCS511>;
+def : Device<"mcs251", FamilyMCS251, ELFArchMCS5151>;
 
 // Generic MCUs
 // Note that several versions of GCC has strange ELF architecture

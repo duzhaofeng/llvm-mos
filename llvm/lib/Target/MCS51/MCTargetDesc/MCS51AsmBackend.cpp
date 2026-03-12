@@ -13,13 +13,12 @@
 #include "MCTargetDesc/MCS51AsmBackend.h"
 #include "MCTargetDesc/MCS51FixupKinds.h"
 #include "MCTargetDesc/MCS51MCTargetDesc.h"
+#include "llvm/ADT/StringSwitch.h"
 #include "llvm/MC/MCAsmBackend.h"
 #include "llvm/MC/MCAssembler.h"
 #include "llvm/MC/MCContext.h"
-#include "llvm/MC/MCDirectives.h"
 #include "llvm/MC/MCELFObjectWriter.h"
 #include "llvm/MC/MCExpr.h"
-#include "llvm/MC/MCFixupKindInfo.h"
 #include "llvm/MC/MCObjectWriter.h"
 #include "llvm/MC/MCSubtargetInfo.h"
 #include "llvm/MC/MCValue.h"
@@ -364,9 +363,6 @@ void MCS51AsmBackend::adjustFixupValue(const MCFixup &Fixup,
   case FK_Data_8:
     break;
 
-  case FK_GPRel_4:
-    llvm_unreachable("don't know how to adjust this fixup");
-    break;
   }
 }
 
@@ -375,14 +371,21 @@ MCS51AsmBackend::createObjectTargetWriter() const {
   return createMCS51ELFObjectWriter(MCELFObjectTargetWriter::getOSABI(OSType));
 }
 
-void MCS51AsmBackend::applyFixup(const MCAssembler &Asm, const MCFixup &Fixup,
-                               const MCValue &Target,
-                               MutableArrayRef<char> Data, uint64_t Value,
-                               bool IsResolved,
-                               const MCSubtargetInfo *STI) const {
-  if (Fixup.getKind() >= FirstLiteralRelocationKind)
+void MCS51AsmBackend::applyFixup(const MCFragment &F, const MCFixup &Fixup,
+                                 const MCValue &Target, uint8_t *Data,
+                                 uint64_t Value, bool IsResolved) {
+  if (IsResolved) {
+    auto TargetVal = MCValue::get(Target.getAddSym(), Target.getSubSym(), Value,
+                                  Target.getSpecifier());
+    if (forceRelocation(F, Fixup, TargetVal))
+      IsResolved = false;
+  }
+  if (!IsResolved)
+    Asm->getWriter().recordRelocation(F, Fixup, Target, Value);
+
+  if (mc::isRelocation(Fixup.getKind()))
     return;
-  adjustFixupValue(Fixup, Target, Value, &Asm.getContext());
+  adjustFixupValue(Fixup, Target, Value, &getContext());
   if (Value == 0)
     return; // Doesn't change encoding.
 
@@ -395,14 +398,14 @@ void MCS51AsmBackend::applyFixup(const MCAssembler &Asm, const MCFixup &Fixup,
   // Shift the value into position.
   Value <<= Info.TargetOffset;
 
-  unsigned Offset = Fixup.getOffset();
-  assert(Offset + NumBytes <= Data.size() && "Invalid fixup offset!");
+    assert(Fixup.getOffset() + NumBytes <= F.getSize() &&
+      "Invalid fixup offset!");
 
   // For each byte of the fragment that the fixup touches, mask in the
   // bits from the fixup value.
   for (unsigned i = 0; i < NumBytes; ++i) {
     uint8_t mask = (((Value >> (i * 8)) & 0xff));
-    Data[Offset + i] |= mask;
+    Data[i] |= mask;
   }
 }
 
@@ -410,18 +413,18 @@ std::optional<MCFixupKind> MCS51AsmBackend::getFixupKind(StringRef Name) const {
   unsigned Type;
   Type = llvm::StringSwitch<unsigned>(Name)
 #define ELF_RELOC(X, Y) .Case(#X, Y)
-#include "llvm/BinaryFormat/ELFRelocs/MCS51.def"
+#include "llvm/BinaryFormat/ELFRelocs/AVR.def"
 #undef ELF_RELOC
-             .Case("BFD_RELOC_NONE", ELF::R_MCS51_NONE)
-             .Case("BFD_RELOC_16", ELF::R_MCS51_16)
-             .Case("BFD_RELOC_32", ELF::R_MCS51_32)
+             .Case("BFD_RELOC_NONE", ELF::R_AVR_NONE)
+             .Case("BFD_RELOC_16", ELF::R_AVR_16)
+             .Case("BFD_RELOC_32", ELF::R_AVR_32)
              .Default(-1u);
   if (Type != -1u)
     return static_cast<MCFixupKind>(FirstLiteralRelocationKind + Type);
   return std::nullopt;
 }
 
-MCFixupKindInfo const &MCS51AsmBackend::getFixupKindInfo(MCFixupKind Kind) const {
+MCFixupKindInfo MCS51AsmBackend::getFixupKindInfo(MCFixupKind Kind) const {
   // NOTE: Many MCS51 fixups work on sets of non-contignous bits. We work around
   // this by saying that the fixup is the size of the entire instruction.
   const static MCFixupKindInfo Infos[MCS51::NumTargetFixupKinds] = {
@@ -431,8 +434,8 @@ MCFixupKindInfo const &MCS51AsmBackend::getFixupKindInfo(MCFixupKind Kind) const
       // name                    offset  bits  flags
       {"fixup_32", 0, 32, 0},
 
-      {"fixup_7_pcrel", 3, 7, MCFixupKindInfo::FKF_IsPCRel},
-      {"fixup_13_pcrel", 0, 12, MCFixupKindInfo::FKF_IsPCRel},
+      {"fixup_7_pcrel", 3, 7, 0},
+      {"fixup_13_pcrel", 0, 12, 0},
 
       {"fixup_16", 0, 16, 0},
       {"fixup_16_pm", 0, 16, 0},
@@ -457,7 +460,7 @@ MCFixupKindInfo const &MCS51AsmBackend::getFixupKindInfo(MCFixupKind Kind) const
       {"fixup_hi8_ldi_pm_neg", 0, 8, 0},
       {"fixup_hh8_ldi_pm_neg", 0, 8, 0},
 
-      {"fixup_call", 0, 22, 0},
+      {"fixup_call", 0, 32, 0},
 
       {"fixup_6", 0, 16, 0}, // non-contiguous
       {"fixup_6_adiw", 0, 6, 0},
@@ -480,15 +483,15 @@ MCFixupKindInfo const &MCS51AsmBackend::getFixupKindInfo(MCFixupKind Kind) const
       {"fixup_port5", 3, 5, 0},
   };
 
-  // Fixup kinds from .reloc directive are like R_MCS51_NONE. They do not require
+  // Fixup kinds from .reloc directive do not require extra processing.
   // any extra processing.
-  if (Kind >= FirstLiteralRelocationKind)
-    return MCAsmBackend::getFixupKindInfo(FK_NONE);
+  if (mc::isRelocation(Kind))
+    return {};
 
   if (Kind < FirstTargetFixupKind)
     return MCAsmBackend::getFixupKindInfo(Kind);
 
-  assert(unsigned(Kind - FirstTargetFixupKind) < getNumFixupKinds() &&
+  assert(unsigned(Kind - FirstTargetFixupKind) < MCS51::NumTargetFixupKinds &&
          "Invalid kind!");
 
   return Infos[Kind - FirstTargetFixupKind];
@@ -505,20 +508,19 @@ bool MCS51AsmBackend::writeNopData(raw_ostream &OS, uint64_t Count,
   return true;
 }
 
-bool MCS51AsmBackend::shouldForceRelocation(const MCAssembler &Asm,
-                                          const MCFixup &Fixup,
-                                          const MCValue &Target,
-                                          const MCSubtargetInfo *STI) {
+bool MCS51AsmBackend::forceRelocation(const MCFragment &F,
+                                      const MCFixup &Fixup,
+                                      const MCValue &Target) {
   switch ((unsigned)Fixup.getKind()) {
   default:
-    return Fixup.getKind() >= FirstLiteralRelocationKind;
+    return mc::isRelocation(Fixup.getKind());
   // Fixups which should always be recorded as relocations.
   case MCS51::fixup_7_pcrel:
   case MCS51::fixup_13_pcrel:
     // Do not force relocation for PC relative branch like 'rjmp .',
     // 'rcall . - off' and 'breq . + off'.
-    if (const auto *SymA = Target.getSymA())
-      if (SymA->getSymbol().getName().size() == 0)
+    if (const auto *SymA = Target.getAddSym())
+      if (SymA->getName().size() == 0)
         return false;
     [[fallthrough]];
   case MCS51::fixup_call:

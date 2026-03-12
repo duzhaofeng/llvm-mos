@@ -8,7 +8,7 @@
 
 #include "MCS51MCExpr.h"
 
-#include "llvm/MC/MCAsmLayout.h"
+#include "llvm/MC/MCAsmInfo.h"
 #include "llvm/MC/MCAssembler.h"
 #include "llvm/MC/MCContext.h"
 #include "llvm/MC/MCStreamer.h"
@@ -45,7 +45,7 @@ void MCS51MCExpr::printImpl(raw_ostream &OS, const MCAsmInfo *MAI) const {
   OS << getName() << '(';
   if (isNegated())
     OS << '-' << '(';
-  getSubExpr()->print(OS, MAI);
+  MAI->printExpr(OS, *getSubExpr());
   if (isNegated())
     OS << ')';
   OS << ')';
@@ -54,8 +54,7 @@ void MCS51MCExpr::printImpl(raw_ostream &OS, const MCAsmInfo *MAI) const {
 bool MCS51MCExpr::evaluateAsConstant(int64_t &Result) const {
   MCValue Value;
 
-  bool isRelocatable =
-      getSubExpr()->evaluateAsRelocatable(Value, nullptr, nullptr);
+  bool isRelocatable = getSubExpr()->evaluateAsRelocatable(Value, nullptr);
 
   if (!isRelocatable)
     return false;
@@ -69,31 +68,12 @@ bool MCS51MCExpr::evaluateAsConstant(int64_t &Result) const {
 }
 
 bool MCS51MCExpr::evaluateAsRelocatableImpl(MCValue &Result,
-                                          const MCAsmLayout *Layout,
-                                          const MCFixup *Fixup) const {
-  MCValue Value;
-  bool isRelocatable = SubExpr->evaluateAsRelocatable(Value, Layout, Fixup);
-
-  if (!isRelocatable)
+                                            const MCAssembler *Asm) const {
+  if (!SubExpr->evaluateAsRelocatable(Result, Asm))
     return false;
 
-  if (Value.isAbsolute()) {
-    Result = MCValue::get(evaluateAsInt64(Value.getConstant()));
-  } else {
-    if (!Layout)
-      return false;
-
-    MCContext &Context = Layout->getAssembler().getContext();
-    const MCSymbolRefExpr *Sym = Value.getSymA();
-    MCSymbolRefExpr::VariantKind Modifier = Sym->getKind();
-    if (Modifier != MCSymbolRefExpr::VK_None)
-      return false;
-    if (Kind == VK_MCS51_PM) {
-      Modifier = MCSymbolRefExpr::VK_MCS51_PM;
-    }
-
-    Sym = MCSymbolRefExpr::create(&Sym->getSymbol(), Modifier, Context);
-    Result = MCValue::get(Sym, Value.getSymB(), Value.getConstant());
+  if (Result.isAbsolute()) {
+    Result = MCValue::get(evaluateAsInt64(Result.getConstant()));
   }
 
   return true;

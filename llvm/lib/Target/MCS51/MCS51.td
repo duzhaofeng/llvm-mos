@@ -77,3 +77,5 @@ def MCS51 : Target {
   let AssemblyParsers = [MCS51AsmParser];
   let AssemblyParserVariants = [MCS51AsmParserVariant];
 }
+
+defm : RemapAllTargetPseudoPointerOperands<DREGS>;

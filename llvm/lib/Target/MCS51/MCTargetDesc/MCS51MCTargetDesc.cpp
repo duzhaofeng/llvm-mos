@@ -84,8 +84,7 @@ createMCS51ObjectTargetStreamer(MCStreamer &S, const MCSubtargetInfo &STI) {
 
 static MCTargetStreamer *createMCAsmTargetStreamer(MCStreamer &S,
                                                    formatted_raw_ostream &OS,
-                                                   MCInstPrinter *InstPrint,
-                                                   bool isVerboseAsm) {
+                                                   MCInstPrinter *InstPrint) {
   return new MCS51TargetAsmStreamer(S);
 }
 

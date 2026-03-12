@@ -30,6 +30,40 @@ let Namespace = "MCS51" in {
 let Namespace = "MCS51" in { def ptr : RegAltNameIndex; }
 
 //===----------------------------------------------------------------------===//
+//  Phase-0 native MCS-51 register model scaffold
+//===----------------------------------------------------------------------===//
+// These definitions are not wired into instruction selection yet. They exist
+// so Phase-0/1 work can model true 8051 architectural registers while legacy
+// AVR-derived classes are removed incrementally.
+
+def ACC : MCS51Reg<0xE0, "a">, DwarfRegNum<[224]>;
+def BREG : MCS51Reg<0xF0, "b">, DwarfRegNum<[240]>;
+def PSW51 : MCS51Reg<0xD0, "psw">, DwarfRegNum<[208]>;
+def SP51 : MCS51Reg<0x81, "sp">, DwarfRegNum<[129]>;
+def DPL51 : MCS51Reg<0x82, "dpl">, DwarfRegNum<[130]>;
+def DPH51 : MCS51Reg<0x83, "dph">, DwarfRegNum<[131]>;
+
+let SubRegIndices = [sub_lo, sub_hi], CoveredBySubRegs = 1 in {
+  def DPTR51 : MCS51Reg<0x82, "dptr", [DPL51, DPH51]>, DwarfRegNum<[130]>;
+}
+
+def RB0 : MCS51Reg<0x00, "rb0", [], ["r0"]>, DwarfRegNum<[0]>;
+def RB1 : MCS51Reg<0x01, "rb1", [], ["r1"]>, DwarfRegNum<[1]>;
+def RB2 : MCS51Reg<0x02, "rb2", [], ["r2"]>, DwarfRegNum<[2]>;
+def RB3 : MCS51Reg<0x03, "rb3", [], ["r3"]>, DwarfRegNum<[3]>;
+def RB4 : MCS51Reg<0x04, "rb4", [], ["r4"]>, DwarfRegNum<[4]>;
+def RB5 : MCS51Reg<0x05, "rb5", [], ["r5"]>, DwarfRegNum<[5]>;
+def RB6 : MCS51Reg<0x06, "rb6", [], ["r6"]>, DwarfRegNum<[6]>;
+def RB7 : MCS51Reg<0x07, "rb7", [], ["r7"]>, DwarfRegNum<[7]>;
+
+def MCS51_ACC : RegisterClass<"MCS51", [i8], 8, (add ACC)>;
+def MCS51_B : RegisterClass<"MCS51", [i8], 8, (add BREG)>;
+def MCS51_PSW : RegisterClass<"MCS51", [i8], 8, (add PSW51)>;
+def MCS51_RBANK : RegisterClass<"MCS51", [i8], 8,
+                                (add RB0, RB1, RB2, RB3, RB4, RB5, RB6, RB7)>;
+def MCS51_DPTR : RegisterClass<"MCS51", [i16], 8, (add DPTR51)>;
+
+//===----------------------------------------------------------------------===//
 //  8-bit general purpose registers
 //===----------------------------------------------------------------------===//
 

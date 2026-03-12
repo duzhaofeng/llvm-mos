@@ -14,6 +14,7 @@
 
 #include "MCTargetDesc/MCS51MCTargetDesc.h"
 
+#include "llvm/MC/MCAsmInfo.h"
 #include "llvm/MC/MCExpr.h"
 #include "llvm/MC/MCInst.h"
 #include "llvm/MC/MCInstrDesc.h"
@@ -134,7 +135,7 @@ void MCS51InstPrinter::printOperand(const MCInst *MI, unsigned OpNo,
     O << formatImm(Op.getImm());
   } else {
     assert(Op.isExpr() && "Unknown operand kind in printOperand");
-    O << *Op.getExpr();
+    MAI.printExpr(O, *Op.getExpr());
   }
 }
 
@@ -166,7 +167,7 @@ void MCS51InstPrinter::printPCRelImm(const MCInst *MI, unsigned OpNo,
     O << Imm;
   } else {
     assert(Op.isExpr() && "Unknown pcrel immediate operand");
-    O << *Op.getExpr();
+    MAI.printExpr(O, *Op.getExpr());
   }
 }
 
@@ -189,7 +190,7 @@ void MCS51InstPrinter::printMemri(const MCInst *MI, unsigned OpNo,
 
     O << Offset;
   } else if (OffsetOp.isExpr()) {
-    O << *OffsetOp.getExpr();
+    MAI.printExpr(O, *OffsetOp.getExpr());
   } else {
     llvm_unreachable("unknown type for offset");
   }

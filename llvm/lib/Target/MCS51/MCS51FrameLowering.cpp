@@ -232,7 +232,7 @@ void MCS51FrameLowering::emitEpilogue(MachineFunction &MF,
 //
 // Notice that strictly this is not a frame pointer because it contains SP after
 // frame allocation instead of having the original SP in function entry.
-bool MCS51FrameLowering::hasFP(const MachineFunction &MF) const {
+bool MCS51FrameLowering::hasFPImpl(const MachineFunction &MF) const {
   const MCS51MachineFunctionInfo *FuncInfo = MF.getInfo<MCS51MachineFunctionInfo>();
 
   return (FuncInfo->getHasSpills() || FuncInfo->getHasAllocas() ||

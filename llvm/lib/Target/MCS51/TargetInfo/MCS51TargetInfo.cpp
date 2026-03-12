@@ -16,6 +16,6 @@ Target &getTheMCS51Target() {
 } // namespace llvm
 
 extern "C" LLVM_EXTERNAL_VISIBILITY void LLVMInitializeMCS51TargetInfo() {
-  llvm::RegisterTarget<llvm::Triple::avr> X(llvm::getTheMCS51Target(), "avr",
-                                            "Atmel MCS51 Microcontroller", "MCS51");
+  llvm::RegisterTarget<llvm::Triple::avr> X(llvm::getTheMCS51Target(), "mcs51",
+                                            "Intel MCS-51 Microcontroller", "MCS51");
 }

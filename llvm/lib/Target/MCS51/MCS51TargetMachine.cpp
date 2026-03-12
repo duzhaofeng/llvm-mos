@@ -33,7 +33,7 @@ static const char *MCS51DataLayout =
 /// Processes a CPU name.
 static StringRef getCPU(StringRef CPU) {
   if (CPU.empty() || CPU == "generic") {
-    return "avr2";
+    return "mcs51";
   }
 
   return CPU;
@@ -49,9 +49,10 @@ MCS51TargetMachine::MCS51TargetMachine(const Target &T, const Triple &TT,
                                    std::optional<Reloc::Model> RM,
                                    std::optional<CodeModel::Model> CM,
                                    CodeGenOptLevel OL, bool JIT)
-    : LLVMTargetMachine(T, MCS51DataLayout, TT, getCPU(CPU), FS, Options,
-                        getEffectiveRelocModel(RM),
-                        getEffectiveCodeModel(CM, CodeModel::Small), OL),
+  : CodeGenTargetMachineImpl(T, MCS51DataLayout, TT, getCPU(CPU), FS,
+                 Options, getEffectiveRelocModel(RM),
+                 getEffectiveCodeModel(CM, CodeModel::Small),
+                 OL),
       SubTarget(TT, std::string(getCPU(CPU)), std::string(FS), *this) {
   this->TLOF = std::make_unique<MCS51TargetObjectFile>();
   initAsmInfo();
@@ -95,7 +96,7 @@ extern "C" LLVM_EXTERNAL_VISIBILITY void LLVMInitializeMCS51Target() {
   auto &PR = *PassRegistry::getPassRegistry();
   initializeMCS51ExpandPseudoPass(PR);
   initializeMCS51ShiftExpandPass(PR);
-  initializeMCS51DAGToDAGISelPass(PR);
+  initializeMCS51DAGToDAGISelLegacyPass(PR);
 }
 
 const MCS51Subtarget *MCS51TargetMachine::getSubtargetImpl() const {

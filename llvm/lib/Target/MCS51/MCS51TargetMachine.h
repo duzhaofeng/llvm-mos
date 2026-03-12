@@ -13,6 +13,7 @@
 #ifndef LLVM_MCS51_TARGET_MACHINE_H
 #define LLVM_MCS51_TARGET_MACHINE_H
 
+#include "llvm/CodeGen/CodeGenTargetMachineImpl.h"
 #include "llvm/IR/DataLayout.h"
 #include "llvm/Target/TargetMachine.h"
 
@@ -27,7 +28,7 @@
 namespace llvm {
 
 /// A generic MCS51 implementation.
-class MCS51TargetMachine : public LLVMTargetMachine {
+class MCS51TargetMachine : public CodeGenTargetMachineImpl {
 public:
   MCS51TargetMachine(const Target &T, const Triple &TT, StringRef CPU,
                    StringRef FS, const TargetOptions &Options,

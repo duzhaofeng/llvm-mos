@@ -18,7 +18,8 @@
 #include "llvm/MC/MCExpr.h"
 #include "llvm/MC/MCInst.h"
 #include "llvm/MC/MCInstBuilder.h"
-#include "llvm/MC/MCParser/MCAsmLexer.h"
+#include "llvm/MC/MCAsmInfo.h"
+#include "llvm/MC/MCParser/AsmLexer.h"
 #include "llvm/MC/MCParser/MCParsedAsmOperand.h"
 #include "llvm/MC/MCParser/MCTargetAsmParser.h"
 #include "llvm/MC/MCStreamer.h"
@@ -30,6 +31,7 @@
 #include "llvm/Support/MathExtras.h"
 
 #include <array>
+#include <optional>
 #include <sstream>
 
 #define DEBUG_TYPE "avr-asm-parser"
@@ -39,7 +41,6 @@ using namespace llvm;
 namespace {
 /// Parses MCS51 assembly from a stream.
 class MCS51AsmParser : public MCTargetAsmParser {
-  const MCSubtargetInfo &STI;
   MCAsmParser &Parser;
   const MCRegisterInfo *MRI;
   const std::string GENERATE_STUBS = "gs";
@@ -51,7 +52,7 @@ class MCS51AsmParser : public MCTargetAsmParser {
 #define GET_ASSEMBLER_HEADER
 #include "MCS51GenAsmMatcher.inc"
 
-  bool MatchAndEmitInstruction(SMLoc IDLoc, unsigned &Opcode,
+  bool matchAndEmitInstruction(SMLoc IDLoc, unsigned &Opcode,
                                OperandVector &Operands, MCStreamer &Out,
                                uint64_t &ErrorInfo,
                                bool MatchingInlineAsm) override;
@@ -60,7 +61,7 @@ class MCS51AsmParser : public MCTargetAsmParser {
   ParseStatus tryParseRegister(MCRegister &Reg, SMLoc &StartLoc,
                                SMLoc &EndLoc) override;
 
-  bool ParseInstruction(ParseInstructionInfo &Info, StringRef Name,
+  bool parseInstruction(ParseInstructionInfo &Info, StringRef Name,
                         SMLoc NameLoc, OperandVector &Operands) override;
 
   ParseStatus parseDirective(AsmToken DirectiveID) override;
@@ -94,7 +95,7 @@ class MCS51AsmParser : public MCTargetAsmParser {
 public:
   MCS51AsmParser(const MCSubtargetInfo &STI, MCAsmParser &Parser,
                const MCInstrInfo &MII, const MCTargetOptions &Options)
-      : MCTargetAsmParser(Options, STI, MII), STI(STI), Parser(Parser) {
+      : MCTargetAsmParser(Options, STI, MII), Parser(Parser) {
     MCAsmParserExtension::Initialize(Parser);
     MRI = getContext().getRegisterInfo();
 
@@ -102,7 +103,7 @@ public:
   }
 
   MCAsmParser &getParser() const { return Parser; }
-  MCAsmLexer &getLexer() const { return Parser.getLexer(); }
+  AsmLexer &getLexer() const { return Parser.getLexer(); }
 };
 
 /// An parsed MCS51 assembly operand.
@@ -248,21 +249,25 @@ public:
   SMLoc getStartLoc() const override { return Start; }
   SMLoc getEndLoc() const override { return End; }
 
-  void print(raw_ostream &O) const override {
+  void print(raw_ostream &O, const MCAsmInfo &MAI) const override {
     switch (Kind) {
     case k_Token:
       O << "Token: \"" << getToken() << "\"";
       break;
     case k_Register:
-      O << "Register: " << getReg();
+      O << "Register: " << getReg().id();
       break;
     case k_Immediate:
-      O << "Immediate: \"" << *getImm() << "\"";
+      O << "Immediate: \"";
+      MAI.printExpr(O, *getImm());
+      O << "\"";
       break;
     case k_Memri: {
       // only manually print the size for non-negative values,
       // as the sign is inserted automatically.
-      O << "Memri: \"" << getReg() << '+' << *getImm() << "\"";
+      O << "Memri: \"" << getReg().id() << '+';
+      MAI.printExpr(O, *getImm());
+      O << "\"";
       break;
     }
     }
@@ -315,15 +320,16 @@ bool MCS51AsmParser::missingFeature(llvm::SMLoc const &Loc,
 
 bool MCS51AsmParser::emit(MCInst &Inst, SMLoc const &Loc, MCStreamer &Out) const {
   Inst.setLoc(Loc);
-  Out.emitInstruction(Inst, STI);
+  Out.emitInstruction(Inst, *STI);
 
   return false;
 }
 
-bool MCS51AsmParser::MatchAndEmitInstruction(SMLoc Loc, unsigned &Opcode,
-                                           OperandVector &Operands,
-                                           MCStreamer &Out, uint64_t &ErrorInfo,
-                                           bool MatchingInlineAsm) {
+bool MCS51AsmParser::matchAndEmitInstruction(SMLoc Loc, unsigned &Opcode,
+                                             OperandVector &Operands,
+                                             MCStreamer &Out,
+                                             uint64_t &ErrorInfo,
+                                             bool MatchingInlineAsm) {
   MCInst Inst;
   unsigned MatchResult =
       MatchInstructionImpl(Operands, Inst, ErrorInfo, MatchingInlineAsm);
@@ -348,6 +354,11 @@ bool MCS51AsmParser::MatchAndEmitInstruction(SMLoc Loc, unsigned &Opcode,
 /// Checks for lowercase or uppercase if necessary.
 int MCS51AsmParser::parseRegisterName(MCRegister (*matchFn)(StringRef)) {
   StringRef Name = Parser.getTok().getString();
+
+  // Phase-0 bridge: map accumulator spelling to a temporary LD8 register
+  // while native 8051 register classes are not wired into instruction defs.
+  if (Name.equals_insensitive("a") || Name.equals_insensitive("acc"))
+    return MCS51::R16;
 
   int RegNum = matchFn(Name);
 
@@ -407,8 +418,9 @@ bool MCS51AsmParser::tryParseRegisterOperand(OperandVector &Operands) {
     return true;
 
   // Reject R0~R15 on avrtiny.
-  if (MCS51::R0 <= RegNo && RegNo <= MCS51::R15 &&
-      STI.hasFeature(MCS51::FeatureTinyEncoding))
+  if (RegNo >= static_cast<int>(MCS51::R0) &&
+      RegNo <= static_cast<int>(MCS51::R15) &&
+      STI->hasFeature(MCS51::FeatureTinyEncoding))
     return Error(Parser.getTok().getLoc(), "invalid register on avrtiny");
 
   AsmToken const &T = Parser.getTok();
@@ -521,6 +533,10 @@ bool MCS51AsmParser::parseOperand(OperandVector &Operands, bool maybeReg) {
   default:
     return Error(Parser.getTok().getLoc(), "unexpected token in operand");
 
+  case AsmToken::Hash:
+    Parser.Lex();
+    return tryParseExpression(Operands);
+
   case AsmToken::Identifier:
     // Try to parse a register, fall through to the next case if it fails.
     if (maybeReg && !tryParseRegisterOperand(Operands)) {
@@ -617,10 +633,15 @@ void MCS51AsmParser::eatComma() {
   }
 }
 
-bool MCS51AsmParser::ParseInstruction(ParseInstructionInfo &Info,
-                                    StringRef Mnemonic, SMLoc NameLoc,
-                                    OperandVector &Operands) {
-  Operands.push_back(MCS51Operand::CreateToken(Mnemonic, NameLoc));
+bool MCS51AsmParser::parseInstruction(ParseInstructionInfo &Info,
+                                      StringRef Mnemonic, SMLoc NameLoc,
+                                      OperandVector &Operands) {
+  // Phase-0 bridge: keep only the mnemonic remaps that still require parser-
+  // side handling. Simple jump/call/condition aliases are defined in TableGen
+  // InstAlias entries.
+  StringRef CanonicalMnemonic = Mnemonic;
+
+  Operands.push_back(MCS51Operand::CreateToken(CanonicalMnemonic, NameLoc));
 
   int OperandNum = -1;
   while (getLexer().isNot(AsmToken::EndOfStatement)) {
@@ -667,6 +688,239 @@ bool MCS51AsmParser::ParseInstruction(ParseInstructionInfo &Info,
       return Error(Loc, "unexpected token in argument list");
     }
   }
+
+  auto isCarryOperand = [](const MCS51Operand &Op) {
+    if (!Op.isImm())
+      return false;
+    const auto *SRE = dyn_cast<MCSymbolRefExpr>(Op.getImm());
+    if (!SRE)
+      return false;
+    StringRef Name = SRE->getSymbol().getName();
+    return Name.equals_insensitive("c") || Name.equals_insensitive("cy");
+  };
+
+  auto getBitIndexOperand = [](const MCS51Operand &Op) -> std::optional<int64_t> {
+    if (!Op.isImm())
+      return std::nullopt;
+    const auto *CE = dyn_cast<MCConstantExpr>(Op.getImm());
+    if (!CE)
+      return std::nullopt;
+    return CE->getValue();
+  };
+
+  auto getBitAddressSuffixOperand =
+      [](const MCS51Operand &Op) -> std::optional<int64_t> {
+    if (!Op.isImm())
+      return std::nullopt;
+    const auto *SRE = dyn_cast<MCSymbolRefExpr>(Op.getImm());
+    if (!SRE)
+      return std::nullopt;
+
+    StringRef Name = SRE->getSymbol().getName();
+    size_t DotPos = Name.rfind('.');
+    if (DotPos == StringRef::npos || DotPos == 0 || DotPos + 1 >= Name.size())
+      return std::nullopt;
+
+    StringRef Base = Name.substr(0, DotPos);
+    bool KnownBitAddressBase = Base.equals_insensitive("p0") ||
+                               Base.equals_insensitive("p1") ||
+                               Base.equals_insensitive("p2") ||
+                               Base.equals_insensitive("p3") ||
+                               Base.equals_insensitive("acc") ||
+                               Base.equals_insensitive("b") ||
+                               Base.equals_insensitive("psw") ||
+                               Base.equals_insensitive("tcon") ||
+                               Base.equals_insensitive("scon") ||
+                               Base.equals_insensitive("ie") ||
+                               Base.equals_insensitive("ip");
+    if (!KnownBitAddressBase)
+      return std::nullopt;
+
+    StringRef Suffix = Name.substr(DotPos + 1);
+    int64_t BitIndex = 0;
+    if (Suffix.getAsInteger(10, BitIndex))
+      return std::nullopt;
+
+    if (BitIndex < 0 || BitIndex > 7)
+      return std::nullopt;
+
+    return BitIndex;
+  };
+
+  auto getPSWBitSuffixOperand =
+      [](const MCS51Operand &Op) -> std::optional<int64_t> {
+    if (!Op.isImm())
+      return std::nullopt;
+    const auto *SRE = dyn_cast<MCSymbolRefExpr>(Op.getImm());
+    if (!SRE)
+      return std::nullopt;
+
+    StringRef Name = SRE->getSymbol().getName();
+    size_t DotPos = Name.rfind('.');
+    if (DotPos == StringRef::npos || DotPos == 0 || DotPos + 1 >= Name.size())
+      return std::nullopt;
+
+    StringRef Base = Name.substr(0, DotPos);
+    if (!Base.equals_insensitive("psw"))
+      return std::nullopt;
+
+    StringRef Suffix = Name.substr(DotPos + 1);
+    int64_t BitIndex = 0;
+    if (Suffix.getAsInteger(10, BitIndex))
+      return std::nullopt;
+
+    if (BitIndex < 0 || BitIndex > 7)
+      return std::nullopt;
+
+    return BitIndex;
+  };
+
+  auto getPSWFlagSuffixOperand =
+      [](const MCS51Operand &Op) -> std::optional<int64_t> {
+    if (!Op.isImm())
+      return std::nullopt;
+    const auto *SRE = dyn_cast<MCSymbolRefExpr>(Op.getImm());
+    if (!SRE)
+      return std::nullopt;
+
+    StringRef Name = SRE->getSymbol().getName();
+    size_t DotPos = Name.rfind('.');
+    if (DotPos == StringRef::npos || DotPos == 0 || DotPos + 1 >= Name.size())
+      return std::nullopt;
+
+    StringRef Base = Name.substr(0, DotPos);
+    if (!Base.equals_insensitive("psw"))
+      return std::nullopt;
+
+    StringRef Suffix = Name.substr(DotPos + 1);
+    if (Suffix.equals_insensitive("c") || Suffix.equals_insensitive("cy") ||
+        Suffix.equals_insensitive("carry"))
+      return 0;
+    if (Suffix.equals_insensitive("z") || Suffix.equals_insensitive("zero"))
+      return 1;
+    if (Suffix.equals_insensitive("n") || Suffix.equals_insensitive("neg") ||
+        Suffix.equals_insensitive("negative"))
+      return 2;
+    if (Suffix.equals_insensitive("v") || Suffix.equals_insensitive("ov") ||
+        Suffix.equals_insensitive("ovf") ||
+        Suffix.equals_insensitive("overflow"))
+      return 3;
+    if (Suffix.equals_insensitive("s") || Suffix.equals_insensitive("sign") ||
+        Suffix.equals_insensitive("signed"))
+      return 4;
+    if (Suffix.equals_insensitive("h") || Suffix.equals_insensitive("half") ||
+        Suffix.equals_insensitive("hc") ||
+        Suffix.equals_insensitive("auxcarry") ||
+        Suffix.equals_insensitive("halfcarry"))
+      return 5;
+    if (Suffix.equals_insensitive("t") ||
+        Suffix.equals_insensitive("transfer"))
+      return 6;
+    if (Suffix.equals_insensitive("i") || Suffix.equals_insensitive("int") ||
+      Suffix.equals_insensitive("irq") ||
+        Suffix.equals_insensitive("interrupt"))
+      return 7;
+
+    return std::nullopt;
+  };
+
+  // Phase-0 bridge: map a tiny carry mnemonic subset to available
+  // AVR-derived instructions.
+  if (Operands.size() == 2) {
+    auto &MnOp = static_cast<MCS51Operand &>(*Operands[0]);
+    auto &ArgOp = static_cast<MCS51Operand &>(*Operands[1]);
+    bool IsSetb = MnOp.getToken().equals_insensitive("setb");
+    bool IsClr = MnOp.getToken().equals_insensitive("clr");
+
+    if (IsSetb && isCarryOperand(ArgOp)) {
+      MnOp.makeToken("sec");
+      Operands.pop_back();
+    } else if (IsClr && isCarryOperand(ArgOp)) {
+      MnOp.makeToken("clc");
+      Operands.pop_back();
+    } else if ((IsSetb || IsClr)) {
+      if (auto BitIndex = getPSWBitSuffixOperand(ArgOp)) {
+        MnOp.makeToken(IsSetb ? "bset" : "bclr");
+        ArgOp.makeImm(MCConstantExpr::create(*BitIndex, getContext()));
+      } else if (auto BitIndex = getPSWFlagSuffixOperand(ArgOp)) {
+        MnOp.makeToken(IsSetb ? "bset" : "bclr");
+        ArgOp.makeImm(MCConstantExpr::create(*BitIndex, getContext()));
+      }
+    }
+  }
+
+  // Phase-0 bridge: support conditional branch forms
+  //   jb c, label   -> brcs label
+  //   jnb c, label  -> brcc label
+  //   jb 0..7,label -> brbs s, label
+  //   jnb 0..7,label -> brbc s, label
+  //   jb p1.0,label -> brbs 0, label (phase-0 suffix bridge)
+  //   jnb p1.0,label -> brbc 0, label (phase-0 suffix bridge)
+  //   jb psw.c,label -> brbs 0, label (phase-0 flag suffix bridge)
+  //   jnb psw.z,label -> brbc 1, label (phase-0 flag suffix bridge)
+  if (Operands.size() == 3) {
+    auto &MnOp = static_cast<MCS51Operand &>(*Operands[0]);
+    auto &Arg0 = static_cast<MCS51Operand &>(*Operands[1]);
+
+    if (isCarryOperand(Arg0)) {
+      if (MnOp.getToken().equals_insensitive("jb")) {
+        MnOp.makeToken("brcs");
+        Operands.erase(Operands.begin() + 1);
+      } else if (MnOp.getToken().equals_insensitive("jnb")) {
+        MnOp.makeToken("brcc");
+        Operands.erase(Operands.begin() + 1);
+      }
+    } else if (auto BitIndex = getBitIndexOperand(Arg0);
+               BitIndex && *BitIndex >= 0 && *BitIndex <= 7) {
+      if (MnOp.getToken().equals_insensitive("jb")) {
+        MnOp.makeToken("brbs");
+      } else if (MnOp.getToken().equals_insensitive("jnb")) {
+        MnOp.makeToken("brbc");
+      }
+    } else if (auto BitIndex = getBitAddressSuffixOperand(Arg0)) {
+      Arg0.makeImm(MCConstantExpr::create(*BitIndex, getContext()));
+      if (MnOp.getToken().equals_insensitive("jb")) {
+        MnOp.makeToken("brbs");
+      } else if (MnOp.getToken().equals_insensitive("jnb")) {
+        MnOp.makeToken("brbc");
+      }
+    } else if (auto BitIndex = getPSWFlagSuffixOperand(Arg0)) {
+      Arg0.makeImm(MCConstantExpr::create(*BitIndex, getContext()));
+      if (MnOp.getToken().equals_insensitive("jb")) {
+        MnOp.makeToken("brbs");
+      } else if (MnOp.getToken().equals_insensitive("jnb")) {
+        MnOp.makeToken("brbc");
+      }
+    }
+  }
+
+  // Phase-0 bridge: accept a tiny subset of 8051 accumulator-immediate forms
+  // by rewriting to available AVR-style instructions.
+  if (Operands.size() == 3 && Operands[1]->isReg() && Operands[2]->isImm()) {
+    auto &MnOp = static_cast<MCS51Operand &>(*Operands[0]);
+    auto &DstOp = static_cast<MCS51Operand &>(*Operands[1]);
+    auto &ImmOp = static_cast<MCS51Operand &>(*Operands[2]);
+
+    if (DstOp.getReg() >= MCS51::R16 && DstOp.getReg() <= MCS51::R31) {
+      if (MnOp.getToken().equals_insensitive("mov")) {
+        MnOp.makeToken("ldi");
+      } else if (MnOp.getToken().equals_insensitive("add")) {
+        MnOp.makeToken("subi");
+        const MCExpr *Imm = ImmOp.getImm();
+        const MCExpr *NegImm = nullptr;
+        if (const auto *CE = dyn_cast<MCConstantExpr>(Imm))
+          NegImm = MCConstantExpr::create(-CE->getValue(), getContext());
+        else
+          NegImm = MCUnaryExpr::createMinus(Imm, getContext());
+        ImmOp.makeImm(NegImm);
+      } else if (MnOp.getToken().equals_insensitive("anl")) {
+        MnOp.makeToken("andi");
+      } else if (MnOp.getToken().equals_insensitive("orl")) {
+        MnOp.makeToken("ori");
+      }
+    }
+  }
+
   Parser.Lex(); // Consume the EndOfStatement
   return false;
 }
@@ -749,7 +1003,7 @@ unsigned MCS51AsmParser::validateTargetOperandClass(MCParsedAsmOperand &AsmOp,
 
       // Reject R0~R15 on avrtiny.
       if (0 <= RegNum && RegNum <= 15 &&
-          STI.hasFeature(MCS51::FeatureTinyEncoding))
+          STI->hasFeature(MCS51::FeatureTinyEncoding))
         return Match_InvalidRegisterOnTiny;
 
       std::ostringstream RegName;
@@ -757,7 +1011,7 @@ unsigned MCS51AsmParser::validateTargetOperandClass(MCParsedAsmOperand &AsmOp,
       RegNum = MatchRegisterName(RegName.str());
       if (RegNum != MCS51::NoRegister) {
         Op.makeReg(RegNum);
-        if (validateOperandClass(Op, Expected) == Match_Success) {
+        if (validateOperandClass(Op, Expected, *STI) == Match_Success) {
           return Match_Success;
         }
       }
@@ -773,7 +1027,7 @@ unsigned MCS51AsmParser::validateTargetOperandClass(MCParsedAsmOperand &AsmOp,
 
       if (correspondingDREG != MCS51::NoRegister) {
         Op.makeReg(correspondingDREG);
-        return validateOperandClass(Op, Expected);
+        return validateOperandClass(Op, Expected, *STI);
       }
     }
   }

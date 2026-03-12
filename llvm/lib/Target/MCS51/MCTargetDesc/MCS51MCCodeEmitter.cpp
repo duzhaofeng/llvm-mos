@@ -36,6 +36,14 @@
 
 namespace llvm {
 
+static void emitLittleEndianBytes(uint64_t Value, unsigned Size,
+                                  SmallVectorImpl<char> &CB) {
+  for (unsigned I = 0; I < Size; ++I) {
+    CB.push_back((char)(Value & 0xff));
+    Value >>= 8;
+  }
+}
+
 /// Performs a post-encoding step on a `LD` or `ST` instruction.
 ///
 /// The encoding of the LD/ST family of instructions is inconsistent w.r.t
@@ -97,7 +105,7 @@ MCS51MCCodeEmitter::encodeRelCondBrTarget(const MCInst &MI, unsigned OpNo,
 
   if (MO.isExpr()) {
     Fixups.push_back(
-        MCFixup::create(0, MO.getExpr(), MCFixupKind(Fixup), MI.getLoc()));
+        MCFixup::create(0, MO.getExpr(), MCFixupKind(Fixup)));
     return 0;
   }
 
@@ -163,7 +171,7 @@ unsigned MCS51MCCodeEmitter::encodeMemri(const MCInst &MI, unsigned OpNo,
   } else if (OffsetOp.isExpr()) {
     OffsetBits = 0;
     Fixups.push_back(MCFixup::create(0, OffsetOp.getExpr(),
-                                     MCFixupKind(MCS51::fixup_6), MI.getLoc()));
+                                     MCFixupKind(MCS51::fixup_6)));
   } else {
     llvm_unreachable("Invalid value for offset");
   }
@@ -198,7 +206,7 @@ unsigned MCS51MCCodeEmitter::encodeImm(const MCInst &MI, unsigned OpNo,
 
     MCFixupKind FixupKind = static_cast<MCFixupKind>(Fixup);
     Fixups.push_back(
-        MCFixup::create(Offset, MO.getExpr(), FixupKind, MI.getLoc()));
+      MCFixup::create(Offset, MO.getExpr(), FixupKind));
 
     return 0;
   }
@@ -214,7 +222,7 @@ unsigned MCS51MCCodeEmitter::encodeCallTarget(const MCInst &MI, unsigned OpNo,
 
   if (MO.isExpr()) {
     MCFixupKind FixupKind = static_cast<MCFixupKind>(MCS51::fixup_call);
-    Fixups.push_back(MCFixup::create(0, MO.getExpr(), FixupKind, MI.getLoc()));
+    Fixups.push_back(MCFixup::create(0, MO.getExpr(), FixupKind));
     return 0;
   }
 
@@ -282,6 +290,14 @@ void MCS51MCCodeEmitter::encodeInstruction(const MCInst &MI,
   assert(Size > 0 && "Instruction size cannot be zero");
 
   uint64_t BinaryOpCode = getBinaryCodeForInstr(MI, Fixups, STI);
+
+  // Phase-0 native MCS-51 bring-up uses byte-oriented encodings and variable
+  // instruction sizes (1/2/3 bytes). Keep legacy AVR-derived word emission as
+  // fallback until the old path is retired.
+  if (STI.getFeatureBits()[MCS51::FeatureMCS51Base]) {
+    emitLittleEndianBytes(BinaryOpCode, Size, CB);
+    return;
+  }
 
   for (int64_t i = Size / 2 - 1; i >= 0; --i) {
     uint16_t Word = (BinaryOpCode >> (i * 16)) & 0xFFFF;
