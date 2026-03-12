@@ -15,17 +15,17 @@
 target:
         ret
 
-; ERR: error: invalid instruction
+; ERR: error: invalid operand for instruction
 ; ERR: setb acc
-; ERR: error: invalid instruction
+; ERR: error: invalid operand for instruction
 ; ERR: setb p1.0
-; ERR: error: invalid instruction
+; ERR: error: invalid operand for instruction
 ; ERR: setb psw.foo
 ; ERR: error: invalid operand for instruction
 ; ERR: clr ie.ex2
 ; ERR: error: invalid operand for instruction
 ; ERR: mov cy, #1
-; ERR: error: invalid instruction
+; ERR: error: invalid operand for instruction
 ; ERR: jb acc, target
-; ERR: error: invalid instruction
+; ERR: error: invalid operand for instruction
 ; ERR: jnb acc, target

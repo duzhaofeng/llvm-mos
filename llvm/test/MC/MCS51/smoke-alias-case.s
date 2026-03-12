@@ -19,8 +19,8 @@ target:
 ; CHECK: cpl{{[[:space:]]+}}r16
 ; CHECK: sec
 ; CHECK: clc
-; CHECK: brbs{{[[:space:]]+}}0,
-; CHECK: brbc{{[[:space:]]+}}0,
+; CHECK: jb{{[[:space:]]+}}0, target
+; CHECK: jnb{{[[:space:]]+}}0, target
 ; CHECK: push{{[[:space:]]+}}r16
 ; CHECK: pop{{[[:space:]]+}}r16
 ; CHECK: ret

@@ -920,94 +920,83 @@ bool MCS51AsmParser::parseInstruction(ParseInstructionInfo &Info,
       return mapSRegFlagNameToBit(Suffix);
   };
 
-  // Phase-0 bridge: map a tiny carry mnemonic subset to available
-  // AVR-derived instructions.
+  // Phase-0 bridge: normalize setb bit spellings and keep clr on parser-side
+  // rewrite to avoid ambiguity with register-clear forms.
   if (Operands.size() == 2) {
     auto &MnOp = static_cast<MCS51Operand &>(*Operands[0]);
     auto &ArgOp = static_cast<MCS51Operand &>(*Operands[1]);
     bool IsSetb = MnOp.getToken().equals_insensitive("setb");
     bool IsClr = MnOp.getToken().equals_insensitive("clr");
 
-    if (IsSetb && isCarryOperand(ArgOp)) {
-      MnOp.makeToken("sec");
-      Operands.pop_back();
-    } else if (IsClr && isCarryOperand(ArgOp)) {
-      MnOp.makeToken("clc");
-      Operands.pop_back();
-    } else if ((IsSetb || IsClr)) {
-      if (auto BitIndex = getPSWBitSuffixOperand(ArgOp)) {
-        MnOp.makeToken(IsSetb ? "bset" : "bclr");
+    if (IsSetb) {
+      if (isCarryOperand(ArgOp)) {
+        ArgOp.makeImm(MCConstantExpr::create(0, getContext()));
+      } else if (auto BitIndex = getPSWBitSuffixOperand(ArgOp)) {
         ArgOp.makeImm(MCConstantExpr::create(*BitIndex, getContext()));
       } else if (auto BitIndex = getPSWFlagSuffixOperand(ArgOp)) {
-        MnOp.makeToken(IsSetb ? "bset" : "bclr");
         ArgOp.makeImm(MCConstantExpr::create(*BitIndex, getContext()));
       } else if (auto BitIndex = getNamedBitAddressSuffixOperand(ArgOp)) {
-        MnOp.makeToken(IsSetb ? "bset" : "bclr");
         ArgOp.makeImm(MCConstantExpr::create(*BitIndex, getContext()));
       } else if (auto BitIndex = getNamedSRegBitOperand(ArgOp)) {
-        MnOp.makeToken(IsSetb ? "bset" : "bclr");
         ArgOp.makeImm(MCConstantExpr::create(*BitIndex, getContext()));
+      } else if (auto BitIndex = getBitIndexOperand(ArgOp);
+                 BitIndex && *BitIndex >= 0 && *BitIndex <= 7) {
+        // Already normalized constant in valid bit range.
+      } else {
+        return Error(ArgOp.getStartLoc(), "invalid operand for instruction");
+      }
+    } else if (IsClr) {
+      if (isCarryOperand(ArgOp)) {
+        MnOp.makeToken("clc");
+        Operands.pop_back();
+      } else if (auto BitIndex = getPSWBitSuffixOperand(ArgOp)) {
+        MnOp.makeToken("bclr");
+        ArgOp.makeImm(MCConstantExpr::create(*BitIndex, getContext()));
+      } else if (auto BitIndex = getPSWFlagSuffixOperand(ArgOp)) {
+        MnOp.makeToken("bclr");
+        ArgOp.makeImm(MCConstantExpr::create(*BitIndex, getContext()));
+      } else if (auto BitIndex = getNamedBitAddressSuffixOperand(ArgOp)) {
+        MnOp.makeToken("bclr");
+        ArgOp.makeImm(MCConstantExpr::create(*BitIndex, getContext()));
+      } else if (auto BitIndex = getNamedSRegBitOperand(ArgOp)) {
+        MnOp.makeToken("bclr");
+        ArgOp.makeImm(MCConstantExpr::create(*BitIndex, getContext()));
+      } else if (auto BitIndex = getBitIndexOperand(ArgOp);
+                 BitIndex && *BitIndex >= 0 && *BitIndex <= 7) {
+        MnOp.makeToken("bclr");
       }
     }
   }
 
-  // Phase-0 bridge: support conditional branch forms
-  //   jb c, label   -> brcs label
-  //   jnb c, label  -> brcc label
-  //   jb 0..7,label -> brbs s, label
-  //   jnb 0..7,label -> brbc s, label
-  //   jb p1.0,label -> brbs 0, label (phase-0 suffix bridge)
-  //   jnb p1.0,label -> brbc 0, label (phase-0 suffix bridge)
-  //   jb psw.c,label -> brbs 0, label (phase-0 flag suffix bridge)
-  //   jnb psw.z,label -> brbc 1, label (phase-0 flag suffix bridge)
+  // Phase-0 bridge: normalize jb/jnb bit operand spellings to 0..7 while
+  // keeping the jb/jnb mnemonic for TableGen alias matching.
   if (Operands.size() == 3) {
     auto &MnOp = static_cast<MCS51Operand &>(*Operands[0]);
     auto &Arg0 = static_cast<MCS51Operand &>(*Operands[1]);
+    bool IsJB = MnOp.getToken().equals_insensitive("jb");
+    bool IsJNB = MnOp.getToken().equals_insensitive("jnb");
+
+    if (!(IsJB || IsJNB))
+      goto SkipJBJNBBridge;
 
     if (isCarryOperand(Arg0)) {
-      if (MnOp.getToken().equals_insensitive("jb")) {
-        MnOp.makeToken("brcs");
-        Operands.erase(Operands.begin() + 1);
-      } else if (MnOp.getToken().equals_insensitive("jnb")) {
-        MnOp.makeToken("brcc");
-        Operands.erase(Operands.begin() + 1);
-      }
+      Arg0.makeImm(MCConstantExpr::create(0, getContext()));
     } else if (auto BitIndex = getNamedSRegBitOperand(Arg0)) {
       Arg0.makeImm(MCConstantExpr::create(*BitIndex, getContext()));
-      if (MnOp.getToken().equals_insensitive("jb")) {
-        MnOp.makeToken("brbs");
-      } else if (MnOp.getToken().equals_insensitive("jnb")) {
-        MnOp.makeToken("brbc");
-      }
     } else if (auto BitIndex = getBitIndexOperand(Arg0);
                BitIndex && *BitIndex >= 0 && *BitIndex <= 7) {
-      if (MnOp.getToken().equals_insensitive("jb")) {
-        MnOp.makeToken("brbs");
-      } else if (MnOp.getToken().equals_insensitive("jnb")) {
-        MnOp.makeToken("brbc");
-      }
+      // Already normalized constant in valid bit range.
     } else if (auto BitIndex = getBitAddressSuffixOperand(Arg0)) {
       Arg0.makeImm(MCConstantExpr::create(*BitIndex, getContext()));
-      if (MnOp.getToken().equals_insensitive("jb")) {
-        MnOp.makeToken("brbs");
-      } else if (MnOp.getToken().equals_insensitive("jnb")) {
-        MnOp.makeToken("brbc");
-      }
     } else if (auto BitIndex = getPSWFlagSuffixOperand(Arg0)) {
       Arg0.makeImm(MCConstantExpr::create(*BitIndex, getContext()));
-      if (MnOp.getToken().equals_insensitive("jb")) {
-        MnOp.makeToken("brbs");
-      } else if (MnOp.getToken().equals_insensitive("jnb")) {
-        MnOp.makeToken("brbc");
-      }
     } else if (auto BitIndex = getNamedBitAddressSuffixOperand(Arg0)) {
       Arg0.makeImm(MCConstantExpr::create(*BitIndex, getContext()));
-      if (MnOp.getToken().equals_insensitive("jb")) {
-        MnOp.makeToken("brbs");
-      } else if (MnOp.getToken().equals_insensitive("jnb")) {
-        MnOp.makeToken("brbc");
-      }
+    } else {
+      return Error(Arg0.getStartLoc(), "invalid operand for instruction");
     }
+
+  SkipJBJNBBridge:;
   }
 
   // Phase-0 bridge: accept a tiny subset of 8051 accumulator-immediate forms

@@ -14,13 +14,13 @@
 target:
         ret
 
-; ERR: error: invalid instruction
+; ERR: error: invalid operand for instruction
 ; ERR: jb 0x20, target
-; ERR: error: invalid instruction
+; ERR: error: invalid operand for instruction
 ; ERR: jnb p1.8, target
-; ERR: error: invalid instruction
+; ERR: error: invalid operand for instruction
 ; ERR: jb foo.3, target
-; ERR: error: invalid instruction
+; ERR: error: invalid operand for instruction
 ; ERR: jnb psw.foo, target
-; ERR: error: invalid instruction
+; ERR: error: invalid operand for instruction
 ; ERR: jb ie.ex2, target

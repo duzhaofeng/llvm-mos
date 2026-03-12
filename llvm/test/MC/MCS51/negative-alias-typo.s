@@ -15,13 +15,13 @@ target:
 
 ; ERR: error: invalid operand for instruction
 ; ERR: mov accc, #1
-; ERR: error: invalid instruction
+; ERR: error: invalid operand for instruction
 ; ERR: setb cyy
 ; ERR: error: invalid operand for instruction
 ; ERR: clr zerro
-; ERR: error: invalid instruction
+; ERR: error: invalid operand for instruction
 ; ERR: jb cyy, target
-; ERR: error: invalid instruction
+; ERR: error: invalid operand for instruction
 ; ERR: jnb irqq, target
 ; ERR: error: invalid operand for instruction
 ; ERR: push accc

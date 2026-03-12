@@ -13,8 +13,8 @@ done:
 
 ; CHECK: sei
 ; CHECK: clc
-; CHECK: {{(brie[[:space:]]+done|brbs[[:space:]]+7,[[:space:]]+done)}}
-; CHECK: {{(brbc[[:space:]]+0,[[:space:]]+done|brcc[[:space:]]+done)}}
-; CHECK: {{(brbs[[:space:]]+0,[[:space:]]+done|brcs[[:space:]]+done)}}
-; CHECK: {{(brhc[[:space:]]+done|brbc[[:space:]]+5,[[:space:]]+done)}}
+; CHECK: jb{{[[:space:]]+}}7, done
+; CHECK: jnb{{[[:space:]]+}}0, done
+; CHECK: jb{{[[:space:]]+}}0, done
+; CHECK: jnb{{[[:space:]]+}}5, done
 ; CHECK: ret

@@ -15,10 +15,10 @@ done:
 
 ; CHECK: sec
 ; CHECK: {{(clz|bclr[[:space:]]+1)}}
-; CHECK: {{(brvs[[:space:]]+done|brbs[[:space:]]+3,[[:space:]]+done)}}
-; CHECK: {{(brid[[:space:]]+done|brbc[[:space:]]+7,[[:space:]]+done)}}
+; CHECK: jb{{[[:space:]]+}}3, done
+; CHECK: jnb{{[[:space:]]+}}7, done
 ; CHECK: sev
 ; CHECK: cli
-; CHECK: brhs{{[[:space:]]+}}done
-; CHECK: brbc{{[[:space:]]+}}4, done
+; CHECK: jb{{[[:space:]]+}}5, done
+; CHECK: jnb{{[[:space:]]+}}4, done
 ; CHECK: ret

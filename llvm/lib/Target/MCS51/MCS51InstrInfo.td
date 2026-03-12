@@ -814,6 +814,8 @@ def : InstAlias<"jc\t$k", (BRBSsk 0, relbrtarget_7 : $k)>;
 def : InstAlias<"jnc\t$k", (BRBCsk 0, relbrtarget_7 : $k)>;
 def : InstAlias<"jz\t$k", (BRBSsk 1, relbrtarget_7 : $k)>;
 def : InstAlias<"jnz\t$k", (BRBCsk 1, relbrtarget_7 : $k)>;
+def : InstAlias<"jb\t$s, $k", (BRBSsk i8imm : $s, relbrtarget_7 : $k)>;
+def : InstAlias<"jnb\t$s, $k", (BRBCsk i8imm : $s, relbrtarget_7 : $k)>;
 
 // BRHS k
 // Branch if half carry flag is set
@@ -1816,6 +1818,10 @@ def : InstAlias<"sez", (BSETs 1)>;
 def : InstAlias<"clz", (BCLRs 1)>;
 
 // Set/clear aliases for the negative (N) status flag (bit 2).
+
+// Parse-only aliases for MCS51 bridge mnemonics; keep canonical printing on
+// underlying BSET/BCLR forms.
+def : InstAlias<"setb\t$s", (BSETs i8imm : $s), 0>;
 def : InstAlias<"sen", (BSETs 2)>;
 def : InstAlias<"cln", (BCLRs 2)>;
 

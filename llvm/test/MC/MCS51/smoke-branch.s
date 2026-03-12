@@ -29,18 +29,18 @@ func:
 ; CHECK: call
 ; CHECK: jz
 ; CHECK: jnz
-; CHECK: brbs{{[[:space:]]+}}0,
-; CHECK: brbc{{[[:space:]]+}}0,
-; CHECK: brbs{{[[:space:]]+}}0,
-; CHECK: brbc{{[[:space:]]+}}0,
-; CHECK: brbs{{[[:space:]]+}}0,
-; CHECK: brbc{{[[:space:]]+}}0,
-; CHECK: brvs{{[[:space:]]+}}func
-; CHECK: brhc{{[[:space:]]+}}func
-; CHECK: brts{{[[:space:]]+}}func
-; CHECK: brhc{{[[:space:]]+}}func
-; CHECK: brbs{{[[:space:]]+}}0,
-; CHECK: {{(brbc[[:space:]]+7,|brid[[:space:]]+)}}func
-; CHECK: brbs{{[[:space:]]+}}0,
-; CHECK: {{(brbc[[:space:]]+1,|jnz[[:space:]]+)}}func
+; CHECK: jb{{[[:space:]]+}}0, func
+; CHECK: jnb{{[[:space:]]+}}0, func
+; CHECK: jb{{[[:space:]]+}}0, func
+; CHECK: jnb{{[[:space:]]+}}0, func
+; CHECK: jb{{[[:space:]]+}}0, func
+; CHECK: jnb{{[[:space:]]+}}0, func
+; CHECK: jb{{[[:space:]]+}}3, func
+; CHECK: jnb{{[[:space:]]+}}5, func
+; CHECK: jb{{[[:space:]]+}}6, func
+; CHECK: jnb{{[[:space:]]+}}5, func
+; CHECK: jb{{[[:space:]]+}}0, func
+; CHECK: jnb{{[[:space:]]+}}7, func
+; CHECK: jb{{[[:space:]]+}}0, func
+; CHECK: {{(jnb[[:space:]]+1,[[:space:]]+func|jnz[[:space:]]+func)}}
 ; CHECK: ret

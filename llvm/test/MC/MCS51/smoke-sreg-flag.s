@@ -12,6 +12,6 @@ done:
 
 ; CHECK: sec
 ; CHECK: clz
-; CHECK: {{(brvs[[:space:]]+done|brbs[[:space:]]+3,[[:space:]]+done)}}
-; CHECK: {{(brid[[:space:]]+done|brbc[[:space:]]+7,[[:space:]]+done)}}
+; CHECK: jb{{[[:space:]]+}}3, done
+; CHECK: jnb{{[[:space:]]+}}7, done
 ; CHECK: ret
