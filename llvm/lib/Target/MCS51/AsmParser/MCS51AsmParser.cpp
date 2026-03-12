@@ -708,91 +708,34 @@ bool MCS51AsmParser::parseInstruction(ParseInstructionInfo &Info,
     return CE->getValue();
   };
 
-  auto getBitAddressSuffixOperand =
-      [](const MCS51Operand &Op) -> std::optional<int64_t> {
+  auto parseDottedSymbolOperand = [](const MCS51Operand &Op, StringRef &Base,
+                                     StringRef &Suffix) -> bool {
     if (!Op.isImm())
-      return std::nullopt;
+      return false;
     const auto *SRE = dyn_cast<MCSymbolRefExpr>(Op.getImm());
     if (!SRE)
-      return std::nullopt;
+      return false;
 
     StringRef Name = SRE->getSymbol().getName();
     size_t DotPos = Name.rfind('.');
     if (DotPos == StringRef::npos || DotPos == 0 || DotPos + 1 >= Name.size())
-      return std::nullopt;
+      return false;
 
-    StringRef Base = Name.substr(0, DotPos);
-    bool KnownBitAddressBase = Base.equals_insensitive("p0") ||
-                               Base.equals_insensitive("p1") ||
-                               Base.equals_insensitive("p2") ||
-                               Base.equals_insensitive("p3") ||
-                               Base.equals_insensitive("acc") ||
-                               Base.equals_insensitive("b") ||
-                               Base.equals_insensitive("psw") ||
-                               Base.equals_insensitive("tcon") ||
-                               Base.equals_insensitive("scon") ||
-                               Base.equals_insensitive("ie") ||
-                               Base.equals_insensitive("ip");
-    if (!KnownBitAddressBase)
-      return std::nullopt;
+    Base = Name.substr(0, DotPos);
+    Suffix = Name.substr(DotPos + 1);
+    return true;
+  };
 
-    StringRef Suffix = Name.substr(DotPos + 1);
+  auto parseBitIndexSuffix = [](StringRef Suffix) -> std::optional<int64_t> {
     int64_t BitIndex = 0;
     if (Suffix.getAsInteger(10, BitIndex))
       return std::nullopt;
-
     if (BitIndex < 0 || BitIndex > 7)
       return std::nullopt;
-
     return BitIndex;
   };
 
-  auto getPSWBitSuffixOperand =
-      [](const MCS51Operand &Op) -> std::optional<int64_t> {
-    if (!Op.isImm())
-      return std::nullopt;
-    const auto *SRE = dyn_cast<MCSymbolRefExpr>(Op.getImm());
-    if (!SRE)
-      return std::nullopt;
-
-    StringRef Name = SRE->getSymbol().getName();
-    size_t DotPos = Name.rfind('.');
-    if (DotPos == StringRef::npos || DotPos == 0 || DotPos + 1 >= Name.size())
-      return std::nullopt;
-
-    StringRef Base = Name.substr(0, DotPos);
-    if (!Base.equals_insensitive("psw"))
-      return std::nullopt;
-
-    StringRef Suffix = Name.substr(DotPos + 1);
-    int64_t BitIndex = 0;
-    if (Suffix.getAsInteger(10, BitIndex))
-      return std::nullopt;
-
-    if (BitIndex < 0 || BitIndex > 7)
-      return std::nullopt;
-
-    return BitIndex;
-  };
-
-  auto getPSWFlagSuffixOperand =
-      [](const MCS51Operand &Op) -> std::optional<int64_t> {
-    if (!Op.isImm())
-      return std::nullopt;
-    const auto *SRE = dyn_cast<MCSymbolRefExpr>(Op.getImm());
-    if (!SRE)
-      return std::nullopt;
-
-    StringRef Name = SRE->getSymbol().getName();
-    size_t DotPos = Name.rfind('.');
-    if (DotPos == StringRef::npos || DotPos == 0 || DotPos + 1 >= Name.size())
-      return std::nullopt;
-
-    StringRef Base = Name.substr(0, DotPos);
-    if (!Base.equals_insensitive("psw"))
-      return std::nullopt;
-
-    StringRef Suffix = Name.substr(DotPos + 1);
+  auto mapSRegFlagNameToBit = [](StringRef Suffix) -> std::optional<int64_t> {
     if (Suffix.equals_insensitive("c") || Suffix.equals_insensitive("cy") ||
         Suffix.equals_insensitive("carry"))
       return 0;
@@ -817,11 +760,164 @@ bool MCS51AsmParser::parseInstruction(ParseInstructionInfo &Info,
         Suffix.equals_insensitive("transfer"))
       return 6;
     if (Suffix.equals_insensitive("i") || Suffix.equals_insensitive("int") ||
-      Suffix.equals_insensitive("irq") ||
+        Suffix.equals_insensitive("irq") ||
         Suffix.equals_insensitive("interrupt"))
       return 7;
 
     return std::nullopt;
+  };
+
+  auto mapNamedBitSuffixForBase =
+      [](StringRef Base, StringRef Suffix) -> std::optional<int64_t> {
+    if (Base.equals_insensitive("ie")) {
+      if (Suffix.equals_insensitive("ex0"))
+        return 0;
+      if (Suffix.equals_insensitive("et0"))
+        return 1;
+      if (Suffix.equals_insensitive("ex1"))
+        return 2;
+      if (Suffix.equals_insensitive("et1"))
+        return 3;
+      if (Suffix.equals_insensitive("es"))
+        return 4;
+      if (Suffix.equals_insensitive("et2"))
+        return 5;
+      if (Suffix.equals_insensitive("ea"))
+        return 7;
+      return std::nullopt;
+    }
+
+    if (Base.equals_insensitive("ip")) {
+      if (Suffix.equals_insensitive("px0"))
+        return 0;
+      if (Suffix.equals_insensitive("pt0"))
+        return 1;
+      if (Suffix.equals_insensitive("px1"))
+        return 2;
+      if (Suffix.equals_insensitive("pt1"))
+        return 3;
+      if (Suffix.equals_insensitive("ps"))
+        return 4;
+      if (Suffix.equals_insensitive("pt2"))
+        return 5;
+      return std::nullopt;
+    }
+
+    if (Base.equals_insensitive("tcon")) {
+      if (Suffix.equals_insensitive("it0"))
+        return 0;
+      if (Suffix.equals_insensitive("ie0"))
+        return 1;
+      if (Suffix.equals_insensitive("it1"))
+        return 2;
+      if (Suffix.equals_insensitive("ie1"))
+        return 3;
+      if (Suffix.equals_insensitive("tr0"))
+        return 4;
+      if (Suffix.equals_insensitive("tf0"))
+        return 5;
+      if (Suffix.equals_insensitive("tr1"))
+        return 6;
+      if (Suffix.equals_insensitive("tf1"))
+        return 7;
+      return std::nullopt;
+    }
+
+    if (Base.equals_insensitive("scon")) {
+      if (Suffix.equals_insensitive("ri"))
+        return 0;
+      if (Suffix.equals_insensitive("ti"))
+        return 1;
+      if (Suffix.equals_insensitive("rb8"))
+        return 2;
+      if (Suffix.equals_insensitive("tb8"))
+        return 3;
+      if (Suffix.equals_insensitive("ren"))
+        return 4;
+      if (Suffix.equals_insensitive("sm2"))
+        return 5;
+      if (Suffix.equals_insensitive("sm1"))
+        return 6;
+      if (Suffix.equals_insensitive("sm0"))
+        return 7;
+      return std::nullopt;
+    }
+
+    return std::nullopt;
+  };
+
+  auto getNamedSRegBitOperand =
+      [mapSRegFlagNameToBit](const MCS51Operand &Op) -> std::optional<int64_t> {
+    if (!Op.isImm())
+      return std::nullopt;
+    const auto *SRE = dyn_cast<MCSymbolRefExpr>(Op.getImm());
+    if (!SRE)
+      return std::nullopt;
+    return mapSRegFlagNameToBit(SRE->getSymbol().getName());
+  };
+
+  auto getNamedBitAddressSuffixOperand =
+      [parseDottedSymbolOperand,
+       mapNamedBitSuffixForBase](const MCS51Operand &Op)
+          -> std::optional<int64_t> {
+    StringRef Base;
+    StringRef Suffix;
+    if (!parseDottedSymbolOperand(Op, Base, Suffix))
+      return std::nullopt;
+
+    return mapNamedBitSuffixForBase(Base, Suffix);
+  };
+
+  auto getBitAddressSuffixOperand =
+      [parseDottedSymbolOperand,
+       parseBitIndexSuffix](const MCS51Operand &Op) -> std::optional<int64_t> {
+    StringRef Base;
+    StringRef Suffix;
+    if (!parseDottedSymbolOperand(Op, Base, Suffix))
+      return std::nullopt;
+
+    bool KnownBitAddressBase = Base.equals_insensitive("p0") ||
+                               Base.equals_insensitive("p1") ||
+                               Base.equals_insensitive("p2") ||
+                               Base.equals_insensitive("p3") ||
+                               Base.equals_insensitive("acc") ||
+                               Base.equals_insensitive("b") ||
+                               Base.equals_insensitive("psw") ||
+                               Base.equals_insensitive("tcon") ||
+                               Base.equals_insensitive("scon") ||
+                               Base.equals_insensitive("ie") ||
+                               Base.equals_insensitive("ip");
+    if (!KnownBitAddressBase)
+      return std::nullopt;
+
+    return parseBitIndexSuffix(Suffix);
+  };
+
+  auto getPSWBitSuffixOperand =
+      [parseDottedSymbolOperand,
+       parseBitIndexSuffix](const MCS51Operand &Op) -> std::optional<int64_t> {
+    StringRef Base;
+    StringRef Suffix;
+    if (!parseDottedSymbolOperand(Op, Base, Suffix))
+      return std::nullopt;
+    if (!Base.equals_insensitive("psw"))
+      return std::nullopt;
+
+    return parseBitIndexSuffix(Suffix);
+  };
+
+    auto getPSWFlagSuffixOperand =
+        [parseDottedSymbolOperand,
+         mapSRegFlagNameToBit](const MCS51Operand &Op)
+        -> std::optional<int64_t> {
+    StringRef Base;
+    StringRef Suffix;
+    if (!parseDottedSymbolOperand(Op, Base, Suffix))
+      return std::nullopt;
+    if (!Base.equals_insensitive("psw"))
+      return std::nullopt;
+
+      return mapSRegFlagNameToBit(Suffix);
   };
 
   // Phase-0 bridge: map a tiny carry mnemonic subset to available
@@ -843,6 +939,12 @@ bool MCS51AsmParser::parseInstruction(ParseInstructionInfo &Info,
         MnOp.makeToken(IsSetb ? "bset" : "bclr");
         ArgOp.makeImm(MCConstantExpr::create(*BitIndex, getContext()));
       } else if (auto BitIndex = getPSWFlagSuffixOperand(ArgOp)) {
+        MnOp.makeToken(IsSetb ? "bset" : "bclr");
+        ArgOp.makeImm(MCConstantExpr::create(*BitIndex, getContext()));
+      } else if (auto BitIndex = getNamedBitAddressSuffixOperand(ArgOp)) {
+        MnOp.makeToken(IsSetb ? "bset" : "bclr");
+        ArgOp.makeImm(MCConstantExpr::create(*BitIndex, getContext()));
+      } else if (auto BitIndex = getNamedSRegBitOperand(ArgOp)) {
         MnOp.makeToken(IsSetb ? "bset" : "bclr");
         ArgOp.makeImm(MCConstantExpr::create(*BitIndex, getContext()));
       }
@@ -870,6 +972,13 @@ bool MCS51AsmParser::parseInstruction(ParseInstructionInfo &Info,
         MnOp.makeToken("brcc");
         Operands.erase(Operands.begin() + 1);
       }
+    } else if (auto BitIndex = getNamedSRegBitOperand(Arg0)) {
+      Arg0.makeImm(MCConstantExpr::create(*BitIndex, getContext()));
+      if (MnOp.getToken().equals_insensitive("jb")) {
+        MnOp.makeToken("brbs");
+      } else if (MnOp.getToken().equals_insensitive("jnb")) {
+        MnOp.makeToken("brbc");
+      }
     } else if (auto BitIndex = getBitIndexOperand(Arg0);
                BitIndex && *BitIndex >= 0 && *BitIndex <= 7) {
       if (MnOp.getToken().equals_insensitive("jb")) {
@@ -885,6 +994,13 @@ bool MCS51AsmParser::parseInstruction(ParseInstructionInfo &Info,
         MnOp.makeToken("brbc");
       }
     } else if (auto BitIndex = getPSWFlagSuffixOperand(Arg0)) {
+      Arg0.makeImm(MCConstantExpr::create(*BitIndex, getContext()));
+      if (MnOp.getToken().equals_insensitive("jb")) {
+        MnOp.makeToken("brbs");
+      } else if (MnOp.getToken().equals_insensitive("jnb")) {
+        MnOp.makeToken("brbc");
+      }
+    } else if (auto BitIndex = getNamedBitAddressSuffixOperand(Arg0)) {
       Arg0.makeImm(MCConstantExpr::create(*BitIndex, getContext()));
       if (MnOp.getToken().equals_insensitive("jb")) {
         MnOp.makeToken("brbs");

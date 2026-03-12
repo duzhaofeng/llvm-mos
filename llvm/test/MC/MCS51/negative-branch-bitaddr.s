@@ -9,6 +9,7 @@
         jnb p1.8, target
         jb foo.3, target
         jnb psw.foo, target
+        jb ie.ex2, target
 
 target:
         ret
@@ -21,3 +22,5 @@ target:
 ; ERR: jb foo.3, target
 ; ERR: error: invalid instruction
 ; ERR: jnb psw.foo, target
+; ERR: error: invalid instruction
+; ERR: jb ie.ex2, target

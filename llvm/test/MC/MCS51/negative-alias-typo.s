@@ -1,11 +1,13 @@
 ; RUN: not llvm-mc -triple avr -arch=mcs51 -mcpu=mcs51 -show-encoding < %s 2>&1 | FileCheck %s --check-prefix=ERR
 ;
 ; Phase-0 alias typo boundary:
-; spellings outside {a, acc} and {c, cy} should be rejected.
+; misspelled accumulator/carry/flag aliases should be rejected.
 
         mov accc, #1
         setb cyy
+        clr zerro
         jb cyy, target
+        jnb irqq, target
         push accc
 
 target:
@@ -15,7 +17,11 @@ target:
 ; ERR: mov accc, #1
 ; ERR: error: invalid instruction
 ; ERR: setb cyy
+; ERR: error: invalid operand for instruction
+; ERR: clr zerro
 ; ERR: error: invalid instruction
 ; ERR: jb cyy, target
+; ERR: error: invalid instruction
+; ERR: jnb irqq, target
 ; ERR: error: invalid operand for instruction
 ; ERR: push accc
