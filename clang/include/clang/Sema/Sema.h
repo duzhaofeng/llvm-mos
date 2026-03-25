@@ -168,6 +168,7 @@ class SemaHLSL;
 class SemaHexagon;
 class SemaLoongArch;
 class SemaM68k;
+class SemaMCS51;
 class SemaMIPS;
 class SemaMSP430;
 class SemaNVPTX;
@@ -1492,6 +1493,11 @@ public:
     return *M68kPtr;
   }
 
+  SemaMCS51 &MCS51() {
+    assert(MCS51Ptr);
+    return *MCS51Ptr;
+  }
+
   SemaMIPS &MIPS() {
     assert(MIPSPtr);
     return *MIPSPtr;
@@ -1620,6 +1626,7 @@ private:
   std::unique_ptr<SemaHexagon> HexagonPtr;
   std::unique_ptr<SemaLoongArch> LoongArchPtr;
   std::unique_ptr<SemaM68k> M68kPtr;
+  std::unique_ptr<SemaMCS51> MCS51Ptr;
   std::unique_ptr<SemaMIPS> MIPSPtr;
   std::unique_ptr<SemaMOS> MOSPtr;
   std::unique_ptr<SemaMSP430> MSP430Ptr;

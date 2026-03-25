@@ -114,6 +114,20 @@ public:
   AVRTargetCodeGenInfo(CodeGenTypes &CGT, unsigned NPR, unsigned NRR)
       : TargetCodeGenInfo(std::make_unique<AVRABIInfo>(CGT, NPR, NRR)) {}
 
+  bool isAddressSpaceAllowedInFunctionLocal(LangAS AS) const override {
+    if (AS == LangAS::Default)
+      return false;
+
+    const auto &Target = getABIInfo().getTarget();
+    StringRef CPU = Target.getTargetOpts().CPU;
+    if (CPU != "mcs51" && CPU != "mcs251")
+      return false;
+
+    unsigned TargetAS = getABIInfo().getContext().getTargetAddressSpace(AS);
+    return TargetAS == 1 || TargetAS == 2 || TargetAS == 3 || TargetAS == 5 ||
+           TargetAS == 6;
+  }
+
   LangAS getGlobalVarAddressSpace(CodeGenModule &CGM,
                                   const VarDecl *D) const override {
     // Check if global/static variable is defined in address space

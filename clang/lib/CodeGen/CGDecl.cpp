@@ -1481,9 +1481,11 @@ static bool shouldExtendLifetime(const ASTContext &Context,
 CodeGenFunction::AutoVarEmission
 CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
   QualType Ty = D.getType();
-  assert(
-      Ty.getAddressSpace() == LangAS::Default ||
-      (Ty.getAddressSpace() == LangAS::opencl_private && getLangOpts().OpenCL));
+  const auto &TCGI = CGM.getTargetCodeGenInfo();
+  assert(Ty.getAddressSpace() == LangAS::Default ||
+         (Ty.getAddressSpace() == LangAS::opencl_private &&
+          getLangOpts().OpenCL) ||
+         TCGI.isAddressSpaceAllowedInFunctionLocal(Ty.getAddressSpace()));
 
   AutoVarEmission emission(D);
 

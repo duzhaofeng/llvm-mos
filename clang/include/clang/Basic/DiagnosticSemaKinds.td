@@ -3595,6 +3595,16 @@ def err_arg_with_address_space : Error<
   "parameter may not be qualified with an address space">;
 def err_field_with_address_space : Error<
   "field may not be qualified with an address space">;
+def err_mcs51_sbit_not_file_scope : Error<
+  "'__sbit' declaration must be at file scope">;
+def err_mcs51_sbit_requires_initializer : Error<
+  "'__sbit' declaration requires an initializer">;
+def err_mcs51_sbit_invalid_initializer : Error<
+  "invalid '__sbit' initializer; expected '__sfr ^ bit(0..7)' or a bit-address constant in [0,255]">;
+def err_mcs51_sbit_bit_index_range : Error<
+  "'__sbit' bit index must be in range [0,7]">;
+def err_mcs51_sbit_address_range : Error<
+  "'__sbit' bit address must be in range [0,255]">;
 def err_compound_literal_with_address_space : Error<
   "compound literal in function scope may not be qualified with an address space">;
 def err_compound_literal_with_vla_type : Error<

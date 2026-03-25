@@ -26,6 +26,7 @@
 #include "Targets/Lanai.h"
 #include "Targets/LoongArch.h"
 #include "Targets/M68k.h"
+#include "Targets/MCS51.h"
 #include "Targets/MOS.h"
 #include "Targets/MSP430.h"
 #include "Targets/Mips.h"
@@ -273,6 +274,8 @@ std::unique_ptr<TargetInfo> AllocateTarget(const llvm::Triple &Triple,
     }
 
   case llvm::Triple::avr:
+    if (Opts.CPU == "mcs51" || Opts.CPU == "mcs251")
+      return std::make_unique<MCS51TargetInfo>(Triple, Opts);
     return std::make_unique<AVRTargetInfo>(Triple, Opts);
   case llvm::Triple::bpfeb:
   case llvm::Triple::bpfel:

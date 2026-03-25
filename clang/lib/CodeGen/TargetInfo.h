@@ -318,6 +318,12 @@ public:
   virtual LangAS getGlobalVarAddressSpace(CodeGenModule &CGM,
                                           const VarDecl *D) const;
 
+  /// Returns true if this target permits function-scope objects in a
+  /// non-default address space.
+  virtual bool isAddressSpaceAllowedInFunctionLocal(LangAS AS) const {
+    return false;
+  }
+
   /// Get the AST address space for alloca.
   virtual LangAS getASTAllocaAddressSpace() const { return LangAS::Default; }
 

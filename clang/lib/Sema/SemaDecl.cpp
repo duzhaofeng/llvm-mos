@@ -50,6 +50,7 @@
 #include "clang/Sema/SemaCUDA.h"
 #include "clang/Sema/SemaHLSL.h"
 #include "clang/Sema/SemaInternal.h"
+#include "clang/Sema/SemaMCS51.h"
 #include "clang/Sema/SemaObjC.h"
 #include "clang/Sema/SemaOpenACC.h"
 #include "clang/Sema/SemaOpenMP.h"
@@ -8908,8 +8909,15 @@ void Sema::CheckVariableDeclarationType(VarDecl *NewVD) {
   // This includes arrays of objects with address space qualifiers, but not
   // automatic variables that point to other address spaces.
   // ISO/IEC TR 18037 S5.1.2
+  if (MCS51().isFileScopeOnlyAnnotatedDecl(NewVD) && !NewVD->isFileVarDecl()) {
+    Diag(NewVD->getLocation(), diag::err_mcs51_sbit_not_file_scope);
+    NewVD->setInvalidDecl();
+    return;
+  }
+
   if (!getLangOpts().OpenCL && NewVD->hasLocalStorage() &&
-      T.getAddressSpace() != LangAS::Default) {
+      T.getAddressSpace() != LangAS::Default &&
+      !MCS51().isAddressSpaceAllowedInFunctionLocal(T.getAddressSpace())) {
     Diag(NewVD->getLocation(), diag::err_as_qualified_auto_decl) << 0;
     NewVD->setInvalidDecl();
     return;
@@ -14019,6 +14027,9 @@ void Sema::AddInitializerToDecl(Decl *RealDecl, Expr *Init, bool DirectInit) {
   // CheckInitializerTypes may change it.
   QualType DclT = VDecl->getType(), SavT = DclT;
 
+  if (!MCS51().normalizeBitAddressInitializer(VDecl, Init))
+    return;
+
   // Expressions default to 'id' when we're in a debugger
   // and we are assigning it to a variable of Objective-C pointer type.
   if (getLangOpts().DebuggerCastResultToId && DclT->isObjCObjectPointerType() &&
@@ -14802,6 +14813,9 @@ void Sema::addLifetimeBoundToImplicitThis(CXXMethodDecl *MD) {
 
 void Sema::CheckCompleteVariableDeclaration(VarDecl *var) {
   if (var->isInvalidDecl()) return;
+
+  if (!MCS51().checkBitAddressDeclHasInitializer(var))
+    return;
 
   CUDA().MaybeAddConstantAttr(var);
 
