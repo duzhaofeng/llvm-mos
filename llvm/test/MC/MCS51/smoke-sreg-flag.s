@@ -1,17 +1,20 @@
-; RUN: llvm-mc -triple avr -arch=mcs51 -mcpu=mcs51 -show-encoding < %s | FileCheck %s
+; RUN: llvm-mc -triple avr -mcpu=mcs51 -show-encoding < %s | FileCheck %s
 ;
-; Phase-0 bridge test: bare SREG-style flag names are accepted in
-; setb/clr and jb/jnb forms.
+; Bare flag names resolve to PSW bit addresses.
 
         setb carry
-        clr zero
+        clr ac
         jb overflow, done
-        jnb irq, done
+        jnb parity, done
 done:
         ret
 
-; CHECK: sec
-; CHECK: clz
-; CHECK: jb{{[[:space:]]+}}3, done
-; CHECK: jnb{{[[:space:]]+}}7, done
+; CHECK: setb{{[[:space:]]+}}PSW.7
+; CHECK: encoding: [0xd2,0xd7]
+; CHECK: clr{{[[:space:]]+}}PSW.6
+; CHECK: encoding: [0xc2,0xd6]
+; CHECK: jb{{[[:space:]]+}}PSW.2, done
+; CHECK: encoding: [0x20,0xd2,0x00]
+; CHECK: jnb{{[[:space:]]+}}PSW.0, done
+; CHECK: encoding: [0x30,0xd0,0x00]
 ; CHECK: ret

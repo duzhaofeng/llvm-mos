@@ -657,8 +657,8 @@ let isBarrier = 1, isBranch = 1, isTerminator = 1 in {
 }
 
 def : InstAlias<"sjmp\t$k", (RJMPk brtarget_13:$k)>;
-def : InstAlias<"ajmp\t$k", (JMPk call_target:$k)>;
-def : InstAlias<"ljmp\t$k", (JMPk call_target:$k)>;
+// NOTE: ajmp/ljmp/acall/lcall are native 8051 mnemonics with distinct
+// encodings (0x01/0x02/0x11/0x12); do not alias them to AVR JMPk/CALLk.
 
 //===----------------------------------------------------------------------===//
 // Call instructions
@@ -694,8 +694,8 @@ let isCall = 1 in {
               Requires<[HasJMPCALL]>;
 }
 
-def : InstAlias<"acall\t$k", (CALLk call_target:$k)>;
-def : InstAlias<"lcall\t$k", (CALLk call_target:$k)>;
+// NOTE: acall/lcall are native 8051 mnemonics (0x11/0x12); do not alias
+// them to AVR CALLk.
 
 //===----------------------------------------------------------------------===//
 // Return instructions.
@@ -810,12 +810,9 @@ def : InstAlias<"brcs\t$k", (BRBSsk 0, relbrtarget_7 : $k)>;
 // Branch if carry flag is clear
 def : InstAlias<"brcc\t$k", (BRBCsk 0, relbrtarget_7 : $k)>;
 
-def : InstAlias<"jc\t$k", (BRBSsk 0, relbrtarget_7 : $k)>;
-def : InstAlias<"jnc\t$k", (BRBCsk 0, relbrtarget_7 : $k)>;
-def : InstAlias<"jz\t$k", (BRBSsk 1, relbrtarget_7 : $k)>;
-def : InstAlias<"jnz\t$k", (BRBCsk 1, relbrtarget_7 : $k)>;
-def : InstAlias<"jb\t$s, $k", (BRBSsk i8imm : $s, relbrtarget_7 : $k)>;
-def : InstAlias<"jnb\t$s, $k", (BRBCsk i8imm : $s, relbrtarget_7 : $k)>;
+// NOTE: jc/jnc/jz/jnz/jb/jnb are native 8051 conditional branches with
+// distinct encodings (0x40/0x50/0x60/0x70/0x20/0x30); do not alias them to
+// AVR BRBS/BRBC.
 
 // BRHS k
 // Branch if half carry flag is set
@@ -1821,7 +1818,6 @@ def : InstAlias<"clz", (BCLRs 1)>;
 
 // Parse-only aliases for MCS51 bridge mnemonics; keep canonical printing on
 // underlying BSET/BCLR forms.
-def : InstAlias<"setb\t$s", (BSETs i8imm : $s), 0>;
 def : InstAlias<"sen", (BSETs 2)>;
 def : InstAlias<"cln", (BCLRs 2)>;
 
@@ -1861,6 +1857,268 @@ def BREAK : F16<0b1001010110011000, (outs), (ins), "break", []>,
 // ---------
 // <|0000|0000|0000|0000>
 def NOP : F16<0b0000000000000000, (outs), (ins), "nop", []>;
+
+//===----------------------------------------------------------------------===//
+// Native 8051 (MCS51) operand types.
+//===----------------------------------------------------------------------===//
+
+/// Current-bank working register Rn (3-bit field, maps to R0..R7) and
+/// indirect register @Ri (1-bit field, maps to R0/R1). These use the GPR8rn
+/// and GPR8ri register classes directly as operands.
+
+/// Match class for a '#'-prefixed immediate (#data).
+def MCS51ImmAsmOperand : AsmOperandClass {
+  let Name = "MCS51Imm";
+  let PredicateMethod = "isMCS51Imm";
+  let RenderMethod = "addImmOperands";
+  let DiagnosticType = "immediate";
+}
+
+/// Match class for a bare direct address (no '#' prefix).
+def MCS51DirectAsmOperand : AsmOperandClass {
+  let Name = "MCS51Direct";
+  let PredicateMethod = "isMCS51Direct";
+  let RenderMethod = "addImmOperands";
+  let DiagnosticType = "address";
+}
+
+/// An 8-bit direct address.
+def mcs51_direct : Operand<i8> {
+  let DecoderMethod = "decodeMCS51Imm8";
+  let PrintMethod = "printMCS51Direct";
+  let ParserMatchClass = MCS51DirectAsmOperand;
+}
+
+/// An 8-bit immediate (#data).
+def mcs51_imm8 : Operand<i8> {
+  let DecoderMethod = "decodeMCS51Imm8";
+  let ParserMatchClass = MCS51ImmAsmOperand;
+  let PrintMethod = "printMCS51Imm";
+}
+
+/// A 16-bit immediate (#data16).
+def mcs51_imm16 : Operand<i16> {
+  let DecoderMethod = "decodeMCS51Imm16";
+  let ParserMatchClass = MCS51ImmAsmOperand;
+  let PrintMethod = "printMCS51Imm";
+}
+
+/// An 8-bit pc-relative displacement (rel8).
+def mcs51_rel8 : Operand<i8> {
+  let DecoderMethod = "decodeMCS51Rel8";
+  let PrintMethod = "printPCRelImm";
+  let OperandType = "OPERAND_PCREL";
+}
+
+/// An 8-bit bit address.
+def mcs51_bit : Operand<i8> {
+  let DecoderMethod = "decodeMCS51Imm8";
+  let PrintMethod = "printMCS51Bit";
+  let ParserMatchClass = MCS51DirectAsmOperand;
+}
+
+/// A 16-bit absolute address.
+def mcs51_addr16 : Operand<i16> {
+  let DecoderMethod = "decodeMCS51Imm16";
+  let OperandType = "OPERAND_ADDR16";
+  let OperandNamespace = "MCS51Op";
+  let ParserMatchClass = MCS51DirectAsmOperand;
+}
+
+/// An 11-bit absolute address (ACALL/AJMP). Filled in by an
+/// instruction-level decoder, so no DecoderMethod here.
+def mcs51_addr11 : Operand<i16> {
+  let OperandType = "OPERAND_ADDR11";
+  let OperandNamespace = "MCS51Op";
+  let ParserMatchClass = MCS51DirectAsmOperand;
+}
+
+//===----------------------------------------------------------------------===//
+// Native 8051 (MCS51) instructions — full instruction set (255 encodings).
+//
+// These are the real 8051 instructions. They are isolated behind the "MCS51N"
+// DecoderNamespace and the "mcs51" AsmVariantName, so they decode and print
+// correctly while never participating in assembly matching.
+//===----------------------------------------------------------------------===//
+
+//===--- Arithmetic: ADD ---------------------------------------------------===//
+
+def MCS51N_ADD_A_RN : MCS51NRn<0b00101, (ins GPR8rn:$rn), "add\ta, $rn">;
+def MCS51N_ADD_A_DIRECT : MCS51NDirect<0x25, (ins mcs51_direct:$direct), "add\ta, $direct">;
+def MCS51N_ADD_A_RI : MCS51NRi<0b0010011, (ins GPR8ri:$ri), "add\ta, @$ri">;
+def MCS51N_ADD_A_IMM : MCS51NImm8<0x24, (ins mcs51_imm8:$imm), "add\ta, $imm">;
+
+//===--- Arithmetic: ADDC --------------------------------------------------===//
+
+def MCS51N_ADDC_A_RN : MCS51NRn<0b00111, (ins GPR8rn:$rn), "addc\ta, $rn">;
+def MCS51N_ADDC_A_DIRECT : MCS51NDirect<0x35, (ins mcs51_direct:$direct), "addc\ta, $direct">;
+def MCS51N_ADDC_A_RI : MCS51NRi<0b0011011, (ins GPR8ri:$ri), "addc\ta, @$ri">;
+def MCS51N_ADDC_A_IMM : MCS51NImm8<0x34, (ins mcs51_imm8:$imm), "addc\ta, $imm">;
+
+//===--- Arithmetic: SUBB --------------------------------------------------===//
+
+def MCS51N_SUBB_A_RN : MCS51NRn<0b10011, (ins GPR8rn:$rn), "subb\ta, $rn">;
+def MCS51N_SUBB_A_DIRECT : MCS51NDirect<0x95, (ins mcs51_direct:$direct), "subb\ta, $direct">;
+def MCS51N_SUBB_A_RI : MCS51NRi<0b1001011, (ins GPR8ri:$ri), "subb\ta, @$ri">;
+def MCS51N_SUBB_A_IMM : MCS51NImm8<0x94, (ins mcs51_imm8:$imm), "subb\ta, $imm">;
+
+//===--- Arithmetic: INC / DEC --------------------------------------------===//
+
+def MCS51N_INC_A : MCS51N1<0x04, "inc\ta">;
+def MCS51N_INC_RN : MCS51NRn<0b00001, (ins GPR8rn:$rn), "inc\t$rn">;
+def MCS51N_INC_DIRECT : MCS51NDirect<0x05, (ins mcs51_direct:$direct), "inc\t$direct">;
+def MCS51N_INC_RI : MCS51NRi<0b0000011, (ins GPR8ri:$ri), "inc\t@$ri">;
+def MCS51N_INC_DPTR : MCS51N1<0xA3, "inc\tdptr">;
+
+def MCS51N_DEC_A : MCS51N1<0x14, "dec\ta">;
+def MCS51N_DEC_RN : MCS51NRn<0b00011, (ins GPR8rn:$rn), "dec\t$rn">;
+def MCS51N_DEC_DIRECT : MCS51NDirect<0x15, (ins mcs51_direct:$direct), "dec\t$direct">;
+def MCS51N_DEC_RI : MCS51NRi<0b0001011, (ins GPR8ri:$ri), "dec\t@$ri">;
+
+def MCS51N_MUL_AB : MCS51N1<0xA4, "mul\tab">;
+def MCS51N_DIV_AB : MCS51N1<0x84, "div\tab">;
+def MCS51N_DA_A : MCS51N1<0xD4, "da\ta">;
+
+//===--- Logical: ANL ------------------------------------------------------===//
+
+def MCS51N_ANL_A_RN : MCS51NRn<0b01011, (ins GPR8rn:$rn), "anl\ta, $rn">;
+def MCS51N_ANL_A_DIRECT : MCS51NDirect<0x55, (ins mcs51_direct:$direct), "anl\ta, $direct">;
+def MCS51N_ANL_A_RI : MCS51NRi<0b0101011, (ins GPR8ri:$ri), "anl\ta, @$ri">;
+def MCS51N_ANL_A_IMM : MCS51NImm8<0x54, (ins mcs51_imm8:$imm), "anl\ta, $imm">;
+def MCS51N_ANL_DIRECT_A : MCS51NDirect<0x52, (ins mcs51_direct:$direct), "anl\t$direct, a">;
+def MCS51N_ANL_DIRECT_IMM : MCS51NDirectImm<0x53, (ins mcs51_direct:$direct, mcs51_imm8:$imm), "anl\t$direct, $imm">;
+
+//===--- Logical: ORL ------------------------------------------------------===//
+
+def MCS51N_ORL_A_RN : MCS51NRn<0b01001, (ins GPR8rn:$rn), "orl\ta, $rn">;
+def MCS51N_ORL_A_DIRECT : MCS51NDirect<0x45, (ins mcs51_direct:$direct), "orl\ta, $direct">;
+def MCS51N_ORL_A_RI : MCS51NRi<0b0100011, (ins GPR8ri:$ri), "orl\ta, @$ri">;
+def MCS51N_ORL_A_IMM : MCS51NImm8<0x44, (ins mcs51_imm8:$imm), "orl\ta, $imm">;
+def MCS51N_ORL_DIRECT_A : MCS51NDirect<0x42, (ins mcs51_direct:$direct), "orl\t$direct, a">;
+def MCS51N_ORL_DIRECT_IMM : MCS51NDirectImm<0x43, (ins mcs51_direct:$direct, mcs51_imm8:$imm), "orl\t$direct, $imm">;
+
+//===--- Logical: XRL ------------------------------------------------------===//
+
+def MCS51N_XRL_A_RN : MCS51NRn<0b01101, (ins GPR8rn:$rn), "xrl\ta, $rn">;
+def MCS51N_XRL_A_DIRECT : MCS51NDirect<0x65, (ins mcs51_direct:$direct), "xrl\ta, $direct">;
+def MCS51N_XRL_A_RI : MCS51NRi<0b0110011, (ins GPR8ri:$ri), "xrl\ta, @$ri">;
+def MCS51N_XRL_A_IMM : MCS51NImm8<0x64, (ins mcs51_imm8:$imm), "xrl\ta, $imm">;
+def MCS51N_XRL_DIRECT_A : MCS51NDirect<0x62, (ins mcs51_direct:$direct), "xrl\t$direct, a">;
+def MCS51N_XRL_DIRECT_IMM : MCS51NDirectImm<0x63, (ins mcs51_direct:$direct, mcs51_imm8:$imm), "xrl\t$direct, $imm">;
+
+//===--- Logical: CLR / CPL / rotates / SWAP ------------------------------===//
+
+def MCS51N_CLR_A : MCS51N1<0xE4, "clr\ta">;
+def MCS51N_CPL_A : MCS51N1<0xF4, "cpl\ta">;
+def MCS51N_RL_A : MCS51N1<0x23, "rl\ta">;
+def MCS51N_RLC_A : MCS51N1<0x33, "rlc\ta">;
+def MCS51N_RR_A : MCS51N1<0x03, "rr\ta">;
+def MCS51N_RRC_A : MCS51N1<0x13, "rrc\ta">;
+def MCS51N_SWAP_A : MCS51N1<0xC4, "swap\ta">;
+
+//===--- Data transfer: MOV ------------------------------------------------===//
+
+def MCS51N_MOV_A_RN : MCS51NRn<0b11101, (ins GPR8rn:$rn), "mov\ta, $rn">;
+def MCS51N_MOV_A_DIRECT : MCS51NDirect<0xE5, (ins mcs51_direct:$direct), "mov\ta, $direct">;
+def MCS51N_MOV_A_RI : MCS51NRi<0b1110011, (ins GPR8ri:$ri), "mov\ta, @$ri">;
+def MCS51N_MOV_A_IMM : MCS51NImm8<0x74, (ins mcs51_imm8:$imm), "mov\ta, $imm">;
+def MCS51N_MOV_RN_A : MCS51NRn<0b11111, (ins GPR8rn:$rn), "mov\t$rn, a">;
+def MCS51N_MOV_RN_DIRECT : MCS51NRnK<0b10101, (ins GPR8rn:$rn, mcs51_direct:$k), "mov\t$rn, $k">;
+def MCS51N_MOV_RN_IMM : MCS51NRnK<0b01111, (ins GPR8rn:$rn, mcs51_imm8:$k), "mov\t$rn, $k">;
+def MCS51N_MOV_DIRECT_A : MCS51NDirect<0xF5, (ins mcs51_direct:$direct), "mov\t$direct, a">;
+def MCS51N_MOV_DIRECT_RN : MCS51NRnK<0b10001, (ins GPR8rn:$rn, mcs51_direct:$k), "mov\t$k, $rn">;
+def MCS51N_MOV_DIRECT_DIRECT : MCS51NDirectDirect<0x85, (ins mcs51_direct:$dst, mcs51_direct:$src), "mov\t$dst, $src">;
+def MCS51N_MOV_DIRECT_RI : MCS51NRiK<0b1000011, (ins GPR8ri:$ri, mcs51_direct:$k), "mov\t$k, @$ri">;
+def MCS51N_MOV_DIRECT_IMM : MCS51NDirectImm<0x75, (ins mcs51_direct:$direct, mcs51_imm8:$imm), "mov\t$direct, $imm">;
+def MCS51N_MOV_RI_A : MCS51NRi<0b1111011, (ins GPR8ri:$ri), "mov\t@$ri, a">;
+def MCS51N_MOV_RI_DIRECT : MCS51NRiK<0b1010011, (ins GPR8ri:$ri, mcs51_direct:$k), "mov\t@$ri, $k">;
+def MCS51N_MOV_RI_IMM : MCS51NRiK<0b0111011, (ins GPR8ri:$ri, mcs51_imm8:$k), "mov\t@$ri, $k">;
+def MCS51N_MOV_DPTR_IMM : MCS51NImm16<0x90, (ins mcs51_imm16:$imm), "mov\tdptr, $imm">;
+
+//===--- Data transfer: MOVC / MOVX ---------------------------------------===//
+
+def MCS51N_MOVC_A_AT_A_DPTR : MCS51N1<0x93, "movc\ta, @a+dptr">;
+def MCS51N_MOVC_A_AT_A_PC : MCS51N1<0x83, "movc\ta, @a+pc">;
+def MCS51N_MOVX_A_AT_RI : MCS51NRi<0b1110001, (ins GPR8ri:$ri), "movx\ta, @$ri">;
+def MCS51N_MOVX_A_AT_DPTR : MCS51N1<0xE0, "movx\ta, @dptr">;
+def MCS51N_MOVX_AT_RI_A : MCS51NRi<0b1111001, (ins GPR8ri:$ri), "movx\t@$ri, a">;
+def MCS51N_MOVX_AT_DPTR_A : MCS51N1<0xF0, "movx\t@dptr, a">;
+
+//===--- Data transfer: PUSH / POP / XCH / XCHD ---------------------------===//
+
+def MCS51N_PUSH_DIRECT : MCS51NDirect<0xC0, (ins mcs51_direct:$direct), "push\t$direct">;
+def MCS51N_POP_DIRECT : MCS51NDirect<0xD0, (ins mcs51_direct:$direct), "pop\t$direct">;
+
+// The accumulator (a/acc) is SFR 0xE0; accept it as a direct address operand
+// for push/pop.
+def : InstAlias<"push\ta", (MCS51N_PUSH_DIRECT 0xE0)>;
+def : InstAlias<"pop\ta", (MCS51N_POP_DIRECT 0xE0)>;
+def : InstAlias<"push\tacc", (MCS51N_PUSH_DIRECT 0xE0)>;
+def : InstAlias<"pop\tacc", (MCS51N_POP_DIRECT 0xE0)>;
+def MCS51N_XCH_A_RN : MCS51NRn<0b11001, (ins GPR8rn:$rn), "xch\ta, $rn">;
+def MCS51N_XCH_A_DIRECT : MCS51NDirect<0xC5, (ins mcs51_direct:$direct), "xch\ta, $direct">;
+def MCS51N_XCH_A_RI : MCS51NRi<0b1100011, (ins GPR8ri:$ri), "xch\ta, @$ri">;
+def MCS51N_XCHD_A_RI : MCS51NRi<0b1101011, (ins GPR8ri:$ri), "xchd\ta, @$ri">;
+
+//===--- Bit operations ----------------------------------------------------===//
+
+def MCS51N_CLR_C : MCS51N1<0xC3, "clr\tc">;
+def MCS51N_CLR_BIT : MCS51NBit<0xC2, (ins mcs51_bit:$bitaddr), "clr\t$bitaddr">;
+def MCS51N_SETB_C : MCS51N1<0xD3, "setb\tc">;
+def MCS51N_SETB_BIT : MCS51NBit<0xD2, (ins mcs51_bit:$bitaddr), "setb\t$bitaddr">;
+def MCS51N_CPL_C : MCS51N1<0xB3, "cpl\tc">;
+def MCS51N_CPL_BIT : MCS51NBit<0xB2, (ins mcs51_bit:$bitaddr), "cpl\t$bitaddr">;
+def MCS51N_ANL_C_BIT : MCS51NBit<0x82, (ins mcs51_bit:$bitaddr), "anl\tc, $bitaddr">;
+def MCS51N_ANL_C_NOTBIT : MCS51NBit<0xB0, (ins mcs51_bit:$bitaddr), "anl\tc, /$bitaddr">;
+def MCS51N_ORL_C_BIT : MCS51NBit<0x72, (ins mcs51_bit:$bitaddr), "orl\tc, $bitaddr">;
+def MCS51N_ORL_C_NOTBIT : MCS51NBit<0xA0, (ins mcs51_bit:$bitaddr), "orl\tc, /$bitaddr">;
+def MCS51N_MOV_C_BIT : MCS51NBit<0xA2, (ins mcs51_bit:$bitaddr), "mov\tc, $bitaddr">;
+def MCS51N_MOV_BIT_C : MCS51NBit<0x92, (ins mcs51_bit:$bitaddr), "mov\t$bitaddr, c">;
+
+//===--- Program branching ------------------------------------------------===//
+
+// Unconditional branches.
+let isBranch = 1, isTerminator = 1, isBarrier = 1 in {
+  def MCS51N_SJMP : MCS51NRel<0x80, (ins mcs51_rel8:$rel), "sjmp\t$rel">;
+  def MCS51N_AJMP : MCS51NAddr11<0b00001, (ins mcs51_addr11:$addr), "ajmp\t$addr">;
+  def MCS51N_LJMP : MCS51NAddr16<0x02, (ins mcs51_addr16:$addr), "ljmp\t$addr">;
+}
+
+// Indirect jump.
+let isBranch = 1, isTerminator = 1, isBarrier = 1, isIndirectBranch = 1 in {
+  def MCS51N_JMP_AT_A_DPTR : MCS51N1<0x73, "jmp\t@a+dptr">;
+}
+
+// Calls.
+let isCall = 1 in {
+  def MCS51N_ACALL : MCS51NAddr11<0b10001, (ins mcs51_addr11:$addr), "acall\t$addr">;
+  def MCS51N_LCALL : MCS51NAddr16<0x12, (ins mcs51_addr16:$addr), "lcall\t$addr">;
+}
+
+// Returns.
+let isReturn = 1, isTerminator = 1, isBarrier = 1 in {
+  def MCS51N_RET : MCS51N1<0x22, "ret">;
+  def MCS51N_RETI : MCS51N1<0x32, "reti">;
+}
+
+// Conditional branches.
+let isBranch = 1, isTerminator = 1 in {
+  def MCS51N_JZ : MCS51NRel<0x60, (ins mcs51_rel8:$rel), "jz\t$rel">;
+  def MCS51N_JNZ : MCS51NRel<0x70, (ins mcs51_rel8:$rel), "jnz\t$rel">;
+  def MCS51N_JC : MCS51NRel<0x40, (ins mcs51_rel8:$rel), "jc\t$rel">;
+  def MCS51N_JNC : MCS51NRel<0x50, (ins mcs51_rel8:$rel), "jnc\t$rel">;
+  def MCS51N_JB : MCS51NBitRel<0x20, (ins mcs51_bit:$bitaddr, mcs51_rel8:$rel), "jb\t$bitaddr, $rel">;
+  def MCS51N_JNB : MCS51NBitRel<0x30, (ins mcs51_bit:$bitaddr, mcs51_rel8:$rel), "jnb\t$bitaddr, $rel">;
+  def MCS51N_JBC : MCS51NBitRel<0x10, (ins mcs51_bit:$bitaddr, mcs51_rel8:$rel), "jbc\t$bitaddr, $rel">;
+  def MCS51N_CJNE_A_DIRECT : MCS51NDirectRel<0xB5, (ins mcs51_direct:$direct, mcs51_rel8:$rel), "cjne\ta, $direct, $rel">;
+  def MCS51N_CJNE_A_IMM : MCS51NImmRel<0xB4, (ins mcs51_imm8:$imm, mcs51_rel8:$rel), "cjne\ta, $imm, $rel">;
+  def MCS51N_CJNE_RN_IMM : MCS51NRnKRel<0b10111, (ins GPR8rn:$rn, mcs51_imm8:$imm, mcs51_rel8:$rel), "cjne\t$rn, $imm, $rel">;
+  def MCS51N_CJNE_RI_IMM : MCS51NRiKRel<0b1011011, (ins GPR8ri:$ri, mcs51_imm8:$imm, mcs51_rel8:$rel), "cjne\t@$ri, $imm, $rel">;
+  def MCS51N_DJNZ_RN : MCS51NRnRel<0b11011, (ins GPR8rn:$rn, mcs51_rel8:$rel), "djnz\t$rn, $rel">;
+  def MCS51N_DJNZ_DIRECT : MCS51NDirectRel<0xD5, (ins mcs51_direct:$direct, mcs51_rel8:$rel), "djnz\t$direct, $rel">;
+}
+
+def MCS51N_NOP : MCS51N1<0x00, "nop">;
 
 // SLEEP
 // Sleep instruction

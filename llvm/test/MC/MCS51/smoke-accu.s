@@ -1,7 +1,6 @@
-; RUN: llvm-mc -triple avr -arch=mcs51 -mcpu=mcs51 -show-encoding < %s | FileCheck %s
+; RUN: llvm-mc -triple avr -mcpu=mcs51 -show-encoding < %s | FileCheck %s
 ;
-; Phase-0 bridge test (accumulator/carry forms): parser accepts a minimal
-; 8051-like syntax subset while internals are still AVR-derived.
+; Accumulator and carry forms with native 8051 encodings.
 
         mov a, #0x12
         mov acc, #0x34
@@ -18,17 +17,26 @@
         cpl a
         ret
 
-; CHECK: ldi{{[[:space:]]+}}r16, 18
-; CHECK: ldi{{[[:space:]]+}}r16, 52
-; CHECK: subi{{[[:space:]]+}}r16, -1
-; CHECK: andi{{[[:space:]]+}}r16, 240
-; CHECK: ori{{[[:space:]]+}}r16, 15
-; CHECK: inc{{[[:space:]]+}}r16
-; CHECK: dec{{[[:space:]]+}}r16
-; CHECK: clr{{[[:space:]]+}}r16
-; CHECK: sec
-; CHECK: sec
-; CHECK: clc
-; CHECK: clc
-; CHECK: cpl{{[[:space:]]+}}r16
+; CHECK: mov{{[[:space:]]+}}a, #18
+; CHECK: encoding: [0x74,0x12]
+; CHECK: mov{{[[:space:]]+}}a, #52
+; CHECK: encoding: [0x74,0x34]
+; CHECK: add{{[[:space:]]+}}a, #1
+; CHECK: encoding: [0x24,0x01]
+; CHECK: anl{{[[:space:]]+}}a, #240
+; CHECK: encoding: [0x54,0xf0]
+; CHECK: orl{{[[:space:]]+}}a, #15
+; CHECK: encoding: [0x44,0x0f]
+; CHECK: inc{{[[:space:]]+}}a
+; CHECK: encoding: [0x04]
+; CHECK: dec{{[[:space:]]+}}a
+; CHECK: encoding: [0x14]
+; CHECK: clr{{[[:space:]]+}}a
+; CHECK: encoding: [0xe4]
+; CHECK: setb{{[[:space:]]+}}c
+; CHECK: encoding: [0xd3]
+; CHECK: clr{{[[:space:]]+}}c
+; CHECK: encoding: [0xc3]
+; CHECK: cpl{{[[:space:]]+}}a
+; CHECK: encoding: [0xf4]
 ; CHECK: ret

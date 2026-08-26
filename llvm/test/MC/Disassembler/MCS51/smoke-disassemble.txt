@@ -1,0 +1,23 @@
+# RUN: llvm-mc -disassemble -triple avr --print-imm-hex %s | FileCheck %s
+
+# Native 8051 disassembly bring-up: variable-length (1/2/3-byte) decoding.
+# These instructions use the "MCS51N" decoder namespace, isolated from the
+# legacy AVR-derived instruction set.
+
+# 1-byte instruction: RR A (rotate accumulator right, opcode 0x03).
+# CHECK: rr a
+0x03
+
+# 2-byte instruction: DJNZ Rn, rel (opcode 0xd8..0xdf + rel8).
+# CHECK: djnz r0, .+5
+0xd8 0x05
+
+# CHECK: djnz r7, .-3
+0xdf 0xfd
+
+# 3-byte instruction: CJNE A, #imm, rel (opcode 0xb4 + imm8 + rel8).
+# CHECK: cjne a, #0x12, .+5
+0xb4 0x12 0x05
+
+# CHECK: cjne a, #0xff, .-2
+0xb4 0xff 0xfe

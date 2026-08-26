@@ -291,18 +291,10 @@ void MCS51MCCodeEmitter::encodeInstruction(const MCInst &MI,
 
   uint64_t BinaryOpCode = getBinaryCodeForInstr(MI, Fixups, STI);
 
-  // Phase-0 native MCS-51 bring-up uses byte-oriented encodings and variable
-  // instruction sizes (1/2/3 bytes). Keep legacy AVR-derived word emission as
-  // fallback until the old path is retired.
-  if (STI.getFeatureBits()[MCS51::FeatureMCS51Base]) {
-    emitLittleEndianBytes(BinaryOpCode, Size, CB);
-    return;
-  }
-
-  for (int64_t i = Size / 2 - 1; i >= 0; --i) {
-    uint16_t Word = (BinaryOpCode >> (i * 16)) & 0xFFFF;
-    support::endian::write(CB, Word, llvm::endianness::little);
-  }
+  // Native 8051 instructions are 1/2/3 bytes; the legacy AVR-derived
+  // instructions are 2/4 bytes. Both are little-endian, so emitting the
+  // encoded value byte-by-byte is correct for every size.
+  emitLittleEndianBytes(BinaryOpCode, Size, CB);
 }
 
 MCCodeEmitter *createMCS51MCCodeEmitter(const MCInstrInfo &MCII,

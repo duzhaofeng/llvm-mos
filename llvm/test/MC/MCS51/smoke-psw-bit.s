@@ -1,20 +1,25 @@
-; RUN: llvm-mc -triple avr -arch=mcs51 -mcpu=mcs51 -show-encoding < %s | FileCheck %s
+; RUN: llvm-mc -triple avr -mcpu=mcs51 -show-encoding < %s | FileCheck %s
 ;
-; Phase-0 bridge test (PSW bit forms): setb/clr on psw.N should lower to
-; AVR status-bit set/clear operations.
+; PSW bit forms resolve to absolute 8051 bit addresses.
 
         setb psw.0
         clr psw.0
         setb psw.3
         clr psw.7
         setb psw.c
-        clr psw.z
+        clr psw.ac
         ret
 
-; CHECK: sec
-; CHECK: clc
-; CHECK: sev
-; CHECK: cli
-; CHECK: sec
-; CHECK: {{(clz|bclr[[:space:]]+1)}}
+; CHECK: setb{{[[:space:]]+}}PSW.0
+; CHECK: encoding: [0xd2,0xd0]
+; CHECK: clr{{[[:space:]]+}}PSW.0
+; CHECK: encoding: [0xc2,0xd0]
+; CHECK: setb{{[[:space:]]+}}PSW.3
+; CHECK: encoding: [0xd2,0xd3]
+; CHECK: clr{{[[:space:]]+}}PSW.7
+; CHECK: encoding: [0xc2,0xd7]
+; CHECK: setb{{[[:space:]]+}}PSW.7
+; CHECK: encoding: [0xd2,0xd7]
+; CHECK: clr{{[[:space:]]+}}PSW.6
+; CHECK: encoding: [0xc2,0xd6]
 ; CHECK: ret

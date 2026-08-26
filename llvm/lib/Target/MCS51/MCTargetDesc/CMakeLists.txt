@@ -7,6 +7,7 @@ add_llvm_component_library(LLVMMCS51Desc
   MCS51MCCodeEmitter.cpp
   MCS51MCELFStreamer.cpp
   MCS51MCExpr.cpp
+  MCS51MCInstrAnalysis.cpp
   MCS51MCTargetDesc.cpp
   MCS51TargetStreamer.cpp
 

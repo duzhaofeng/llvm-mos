@@ -1,4 +1,4 @@
-; RUN: llvm-mc -triple avr -arch=mcs51 -mcpu=mcs51 -show-encoding < %s | FileCheck %s
+; RUN: llvm-mc -triple avr -mcpu=mcs51 -show-encoding < %s | FileCheck %s
 ;
 ; Minimal end-to-end sanity test kept as a stable fast check.
 
@@ -7,6 +7,7 @@
 func:
         ret
 
-; CHECK: ldi{{[[:space:]]+}}r16, 18
+; CHECK: mov{{[[:space:]]+}}a, #18
+; CHECK: encoding: [0x74,0x12]
 ; CHECK: sjmp
 ; CHECK: ret

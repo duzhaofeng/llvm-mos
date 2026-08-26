@@ -36,7 +36,7 @@ let Namespace = "MCS51" in { def ptr : RegAltNameIndex; }
 // so Phase-0/1 work can model true 8051 architectural registers while legacy
 // AVR-derived classes are removed incrementally.
 
-def ACC : MCS51Reg<0xE0, "a">, DwarfRegNum<[224]>;
+def ACC : MCS51Reg<0xE0, "a", [], ["acc"]>, DwarfRegNum<[224]>;
 def BREG : MCS51Reg<0xF0, "b">, DwarfRegNum<[240]>;
 def PSW51 : MCS51Reg<0xD0, "psw">, DwarfRegNum<[208]>;
 def SP51 : MCS51Reg<0x81, "sp">, DwarfRegNum<[129]>;
@@ -159,6 +159,13 @@ def GPR8 : RegisterClass<"MCS51", [i8], 8,
 def GPR8lo : RegisterClass<"MCS51", [i8], 8,
                            (add R15, R14, R13, R12, R11, R10, R9, R8, R7, R6,
                             R5, R4, R3, R2, R0, R1)>;
+
+// Native 8051 working registers R0..R7 (3-bit encoded, current register bank).
+def GPR8rn : RegisterClass<"MCS51", [i8], 8,
+                           (add R0, R1, R2, R3, R4, R5, R6, R7)>;
+
+// Native 8051 indirect registers R0/R1 (1-bit encoded).
+def GPR8ri : RegisterClass<"MCS51", [i8], 8, (add R0, R1)>;
 
 // 8-bit register class for instructions which take immediates.
 def LD8 : RegisterClass<"MCS51", [i8], 8,

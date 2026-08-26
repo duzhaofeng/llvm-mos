@@ -45,10 +45,14 @@ class MCS51AsmParser : public MCTargetAsmParser {
   const MCRegisterInfo *MRI;
   const std::string GENERATE_STUBS = "gs";
 
+public:
   enum MCS51MatchResultTy {
     Match_InvalidRegisterOnTiny = FIRST_TARGET_MATCH_RESULT_TY + 1,
+    Match_immediate,
+    Match_address,
   };
 
+private:
 #define GET_ASSEMBLER_HEADER
 #include "MCS51GenAsmMatcher.inc"
 
@@ -73,7 +77,7 @@ class MCS51AsmParser : public MCTargetAsmParser {
   int parseRegisterName();
   int parseRegister(bool RestoreOnFailure = false);
   bool tryParseRegisterOperand(OperandVector &Operands);
-  bool tryParseExpression(OperandVector &Operands);
+  bool tryParseExpression(OperandVector &Operands, bool IsHash = false);
   bool tryParseRelocExpression(OperandVector &Operands);
   void eatComma();
 
@@ -110,6 +114,10 @@ public:
 class MCS51Operand : public MCParsedAsmOperand {
   typedef MCParsedAsmOperand Base;
   enum KindTy { k_Immediate, k_Register, k_Token, k_Memri } Kind;
+
+  /// True if this immediate was spelled with the 8051 '#' prefix, which
+  /// distinguishes an immediate (#data) from a direct address.
+  bool HashPrefixed = false;
 
 public:
   MCS51Operand(StringRef Tok, SMLoc const &S)
@@ -191,6 +199,16 @@ public:
   bool isMem() const override { return Kind == k_Memri; }
   bool isMemri() const { return Kind == k_Memri; }
 
+  /// Matches an 8051 '#'-prefixed immediate (#data).
+  bool isMCS51Imm() const {
+    return Kind == k_Immediate && HashPrefixed;
+  }
+
+  /// Matches an 8051 bare direct address (no '#' prefix).
+  bool isMCS51Direct() const {
+    return Kind == k_Immediate && !HashPrefixed;
+  }
+
   StringRef getToken() const {
     assert(Kind == k_Token && "Invalid access!");
     return Tok;
@@ -217,8 +235,10 @@ public:
   }
 
   static std::unique_ptr<MCS51Operand> CreateImm(const MCExpr *Val, SMLoc S,
-                                               SMLoc E) {
-    return std::make_unique<MCS51Operand>(Val, S, E);
+                                               SMLoc E, bool IsHash = false) {
+    auto Op = std::make_unique<MCS51Operand>(Val, S, E);
+    Op->HashPrefixed = IsHash;
+    return Op;
   }
 
   static std::unique_ptr<MCS51Operand>
@@ -345,6 +365,9 @@ bool MCS51AsmParser::matchAndEmitInstruction(SMLoc Loc, unsigned &Opcode,
     return Error(Loc, "invalid instruction");
   case Match_InvalidRegisterOnTiny:
     return Error(Loc, "invalid register on avrtiny");
+  case Match_immediate:
+  case Match_address:
+    return invalidOperand(Loc, Operands, ErrorInfo);
   default:
     return true;
   }
@@ -354,11 +377,6 @@ bool MCS51AsmParser::matchAndEmitInstruction(SMLoc Loc, unsigned &Opcode,
 /// Checks for lowercase or uppercase if necessary.
 int MCS51AsmParser::parseRegisterName(MCRegister (*matchFn)(StringRef)) {
   StringRef Name = Parser.getTok().getString();
-
-  // Phase-0 bridge: map accumulator spelling to a temporary LD8 register
-  // while native 8051 register classes are not wired into instruction defs.
-  if (Name.equals_insensitive("a") || Name.equals_insensitive("acc"))
-    return MCS51::R16;
 
   int RegNum = matchFn(Name);
 
@@ -430,7 +448,8 @@ bool MCS51AsmParser::tryParseRegisterOperand(OperandVector &Operands) {
   return false;
 }
 
-bool MCS51AsmParser::tryParseExpression(OperandVector &Operands) {
+bool MCS51AsmParser::tryParseExpression(OperandVector &Operands,
+                                       bool IsHash) {
   SMLoc S = Parser.getTok().getLoc();
 
   if (!tryParseRelocExpression(Operands))
@@ -450,7 +469,7 @@ bool MCS51AsmParser::tryParseExpression(OperandVector &Operands) {
     return true;
 
   SMLoc E = SMLoc::getFromPointer(Parser.getTok().getLoc().getPointer() - 1);
-  Operands.push_back(MCS51Operand::CreateImm(Expression, S, E));
+  Operands.push_back(MCS51Operand::CreateImm(Expression, S, E, IsHash));
   return false;
 }
 
@@ -535,14 +554,69 @@ bool MCS51AsmParser::parseOperand(OperandVector &Operands, bool maybeReg) {
 
   case AsmToken::Hash:
     Parser.Lex();
-    return tryParseExpression(Operands);
+    return tryParseExpression(Operands, /*IsHash=*/true);
 
-  case AsmToken::Identifier:
+  case AsmToken::At: {
+    // 8051 indirect addressing. Forms:
+    //   @Ri    -> '@' token followed by an Ri register
+    //   @dptr  -> single '@dptr' token
+    //   @a+pc / @a+dptr -> '@a' token, then '+' handled as a separate token.
+    SMLoc Loc = Parser.getTok().getLoc();
+    StringRef Next = getLexer().peekTok().getString();
+    if (Next.equals_insensitive("dptr")) {
+      Operands.push_back(MCS51Operand::CreateToken("@dptr", Loc));
+      Parser.Lex(); // Eat '@'.
+      Parser.Lex(); // Eat 'dptr'.
+      return false;
+    }
+    if (Next.equals_insensitive("a")) {
+      Operands.push_back(MCS51Operand::CreateToken("@a", Loc));
+      Parser.Lex(); // Eat '@'.
+      Parser.Lex(); // Eat 'a'.
+      return false;
+    }
+    // '@' followed by a register (R0/R1).
+    Operands.push_back(
+        MCS51Operand::CreateToken("@", Parser.getTok().getLoc()));
+    Parser.Lex(); // Eat '@'.
+    return tryParseRegisterOperand(Operands);
+  }
+
+  case AsmToken::Slash:
+    // 8051 bit-complement prefix: "/bit".
+    Operands.push_back(
+        MCS51Operand::CreateToken("/", Parser.getTok().getLoc()));
+    Parser.Lex(); // Eat '/'.
+    return false;
+
+  case AsmToken::Identifier: {
+    // The 8051 carry flag ("c"/"cy") and the A/B pair ("ab") are fixed
+    // tokens, never symbols.
+    StringRef Id = getLexer().getTok().getString();
+    if (Id.equals_insensitive("c") || Id.equals_insensitive("cy")) {
+      Operands.push_back(
+          MCS51Operand::CreateToken("c", Parser.getTok().getLoc()));
+      Parser.Lex();
+      return false;
+    }
+    if (Id.equals_insensitive("ab")) {
+      Operands.push_back(
+          MCS51Operand::CreateToken("ab", Parser.getTok().getLoc()));
+      Parser.Lex();
+      return false;
+    }
+    if (Id.equals_insensitive("pc")) {
+      Operands.push_back(
+          MCS51Operand::CreateToken("pc", Parser.getTok().getLoc()));
+      Parser.Lex();
+      return false;
+    }
     // Try to parse a register, fall through to the next case if it fails.
     if (maybeReg && !tryParseRegisterOperand(Operands)) {
       return false;
     }
     [[fallthrough]];
+  }
   case AsmToken::LParen:
   case AsmToken::Integer:
   case AsmToken::Dot:
@@ -689,341 +763,196 @@ bool MCS51AsmParser::parseInstruction(ParseInstructionInfo &Info,
     }
   }
 
-  auto isCarryOperand = [](const MCS51Operand &Op) {
+  // Resolve 8051 bit-address spellings.
+  //   - 'c'/'cy' are parsed as the fixed 'c' token (for setb c, clr c, ...).
+  //   - flag names and 'base.bit' dotted forms are parsed as symbols and are
+  //     resolved here to absolute bit addresses.
+  //   - jb/jnb/jbc accept 'c' as the carry bit (0xD7).
+  auto MatchBitBase = [](StringRef Base, StringRef Suffix,
+                         int64_t &BitAddr) -> bool {
+    // Named bit suffixes first.
+    bool Named = false;
+    if (Base.equals_insensitive("psw")) {
+      Named = true;
+      if (Suffix.equals_insensitive("p") || Suffix.equals_insensitive("parity"))
+        BitAddr = 0xD0;
+      else if (Suffix.equals_insensitive("ov") ||
+               Suffix.equals_insensitive("ovf") ||
+               Suffix.equals_insensitive("overflow"))
+        BitAddr = 0xD2;
+      else if (Suffix.equals_insensitive("rs0"))
+        BitAddr = 0xD3;
+      else if (Suffix.equals_insensitive("rs1"))
+        BitAddr = 0xD4;
+      else if (Suffix.equals_insensitive("f0"))
+        BitAddr = 0xD5;
+      else if (Suffix.equals_insensitive("ac") ||
+               Suffix.equals_insensitive("auxcarry"))
+        BitAddr = 0xD6;
+      else if (Suffix.equals_insensitive("c") || Suffix.equals_insensitive("cy") ||
+               Suffix.equals_insensitive("carry"))
+        BitAddr = 0xD7;
+      else
+        Named = false;
+    } else if (Base.equals_insensitive("tcon")) {
+      static constexpr const char *Names[] = {"it0", "ie0", "it1", "ie1",
+                                              "tr0", "tf0", "tr1", "tf1"};
+      for (unsigned I = 0; I < 8; ++I)
+        if (Suffix.equals_insensitive(Names[I])) {
+          BitAddr = 0x88 + I;
+          Named = true;
+          break;
+        }
+    } else if (Base.equals_insensitive("scon")) {
+      static constexpr const char *Names[] = {"ri", "ti", "rb8", "tb8",
+                                              "ren", "sm2", "sm1", "sm0"};
+      for (unsigned I = 0; I < 8; ++I)
+        if (Suffix.equals_insensitive(Names[I])) {
+          BitAddr = 0x98 + I;
+          Named = true;
+          break;
+        }
+    } else if (Base.equals_insensitive("ie")) {
+      Named = true;
+      if (Suffix.equals_insensitive("ex0"))
+        BitAddr = 0xA8;
+      else if (Suffix.equals_insensitive("et0"))
+        BitAddr = 0xA9;
+      else if (Suffix.equals_insensitive("ex1"))
+        BitAddr = 0xAA;
+      else if (Suffix.equals_insensitive("et1"))
+        BitAddr = 0xAB;
+      else if (Suffix.equals_insensitive("es"))
+        BitAddr = 0xAC;
+      else if (Suffix.equals_insensitive("et2"))
+        BitAddr = 0xAD;
+      else if (Suffix.equals_insensitive("ea"))
+        BitAddr = 0xAF;
+      else
+        Named = false;
+    } else if (Base.equals_insensitive("ip")) {
+      Named = true;
+      if (Suffix.equals_insensitive("px0"))
+        BitAddr = 0xB8;
+      else if (Suffix.equals_insensitive("pt0"))
+        BitAddr = 0xB9;
+      else if (Suffix.equals_insensitive("px1"))
+        BitAddr = 0xBA;
+      else if (Suffix.equals_insensitive("pt1"))
+        BitAddr = 0xBB;
+      else if (Suffix.equals_insensitive("ps"))
+        BitAddr = 0xBC;
+      else if (Suffix.equals_insensitive("pt2"))
+        BitAddr = 0xBD;
+      else
+        Named = false;
+    }
+
+    if (Named)
+      return true;
+
+    // Numeric bit suffix for every bit-addressable SFR byte.
+    uint8_t Addr = 0;
+    if (Base.equals_insensitive("p0"))
+      Addr = 0x80;
+    else if (Base.equals_insensitive("tcon"))
+      Addr = 0x88;
+    else if (Base.equals_insensitive("p1"))
+      Addr = 0x90;
+    else if (Base.equals_insensitive("scon"))
+      Addr = 0x98;
+    else if (Base.equals_insensitive("p2"))
+      Addr = 0xA0;
+    else if (Base.equals_insensitive("ie"))
+      Addr = 0xA8;
+    else if (Base.equals_insensitive("p3"))
+      Addr = 0xB0;
+    else if (Base.equals_insensitive("ip"))
+      Addr = 0xB8;
+    else if (Base.equals_insensitive("psw"))
+      Addr = 0xD0;
+    else if (Base.equals_insensitive("acc"))
+      Addr = 0xE0;
+    else if (Base.equals_insensitive("b"))
+      Addr = 0xF0;
+    else
+      return false;
+
+    int64_t BitNo = -1;
+    if (!Suffix.getAsInteger(10, BitNo) && BitNo >= 0 && BitNo <= 7) {
+      BitAddr = Addr + BitNo;
+      return true;
+    }
+    return false;
+  };
+
+  auto ResolveBitAddress = [this, &MatchBitBase](MCS51Operand &Op) -> bool {
     if (!Op.isImm())
       return false;
     const auto *SRE = dyn_cast<MCSymbolRefExpr>(Op.getImm());
     if (!SRE)
       return false;
     StringRef Name = SRE->getSymbol().getName();
-    return Name.equals_insensitive("c") || Name.equals_insensitive("cy");
-  };
 
-  auto getBitIndexOperand = [](const MCS51Operand &Op) -> std::optional<int64_t> {
-    if (!Op.isImm())
-      return std::nullopt;
-    const auto *CE = dyn_cast<MCConstantExpr>(Op.getImm());
-    if (!CE)
-      return std::nullopt;
-    return CE->getValue();
-  };
+    int64_t BitAddr = -1;
+    // Bare flag names.
+    if (Name.equals_insensitive("carry"))
+      BitAddr = 0xD7;
+    else if (Name.equals_insensitive("auxcarry") || Name.equals_insensitive("ac"))
+      BitAddr = 0xD6;
+    else if (Name.equals_insensitive("f0"))
+      BitAddr = 0xD5;
+    else if (Name.equals_insensitive("rs1"))
+      BitAddr = 0xD4;
+    else if (Name.equals_insensitive("rs0"))
+      BitAddr = 0xD3;
+    else if (Name.equals_insensitive("overflow") || Name.equals_insensitive("ov"))
+      BitAddr = 0xD2;
+    else if (Name.equals_insensitive("parity") || Name.equals_insensitive("p"))
+      BitAddr = 0xD0;
+    else {
+      size_t Dot = Name.rfind('.');
+      if (Dot != StringRef::npos && Dot != 0 && Dot + 1 < Name.size()) {
+        StringRef Base = Name.substr(0, Dot);
+        StringRef Suffix = Name.substr(Dot + 1);
+        MatchBitBase(Base, Suffix, BitAddr);
+      }
+    }
 
-  auto parseDottedSymbolOperand = [](const MCS51Operand &Op, StringRef &Base,
-                                     StringRef &Suffix) -> bool {
-    if (!Op.isImm())
+    if (BitAddr < 0)
       return false;
-    const auto *SRE = dyn_cast<MCSymbolRefExpr>(Op.getImm());
-    if (!SRE)
-      return false;
-
-    StringRef Name = SRE->getSymbol().getName();
-    size_t DotPos = Name.rfind('.');
-    if (DotPos == StringRef::npos || DotPos == 0 || DotPos + 1 >= Name.size())
-      return false;
-
-    Base = Name.substr(0, DotPos);
-    Suffix = Name.substr(DotPos + 1);
+    Op.makeImm(MCConstantExpr::create(BitAddr, getContext()));
     return true;
   };
 
-  auto parseBitIndexSuffix = [](StringRef Suffix) -> std::optional<int64_t> {
-    int64_t BitIndex = 0;
-    if (Suffix.getAsInteger(10, BitIndex))
-      return std::nullopt;
-    if (BitIndex < 0 || BitIndex > 7)
-      return std::nullopt;
-    return BitIndex;
-  };
+  StringRef Mn = static_cast<MCS51Operand &>(*Operands[0]).getToken();
+  bool IsBitBranch = Mn.equals_insensitive("jb") ||
+                     Mn.equals_insensitive("jnb") ||
+                     Mn.equals_insensitive("jbc");
 
-  auto mapSRegFlagNameToBit = [](StringRef Suffix) -> std::optional<int64_t> {
-    if (Suffix.equals_insensitive("c") || Suffix.equals_insensitive("cy") ||
-        Suffix.equals_insensitive("carry"))
-      return 0;
-    if (Suffix.equals_insensitive("z") || Suffix.equals_insensitive("zero"))
-      return 1;
-    if (Suffix.equals_insensitive("n") || Suffix.equals_insensitive("neg") ||
-        Suffix.equals_insensitive("negative"))
-      return 2;
-    if (Suffix.equals_insensitive("v") || Suffix.equals_insensitive("ov") ||
-        Suffix.equals_insensitive("ovf") ||
-        Suffix.equals_insensitive("overflow"))
-      return 3;
-    if (Suffix.equals_insensitive("s") || Suffix.equals_insensitive("sign") ||
-        Suffix.equals_insensitive("signed"))
-      return 4;
-    if (Suffix.equals_insensitive("h") || Suffix.equals_insensitive("half") ||
-        Suffix.equals_insensitive("hc") ||
-        Suffix.equals_insensitive("auxcarry") ||
-        Suffix.equals_insensitive("halfcarry"))
-      return 5;
-    if (Suffix.equals_insensitive("t") ||
-        Suffix.equals_insensitive("transfer"))
-      return 6;
-    if (Suffix.equals_insensitive("i") || Suffix.equals_insensitive("int") ||
-        Suffix.equals_insensitive("irq") ||
-        Suffix.equals_insensitive("interrupt"))
-      return 7;
-
-    return std::nullopt;
-  };
-
-  auto mapNamedBitSuffixForBase =
-      [](StringRef Base, StringRef Suffix) -> std::optional<int64_t> {
-    if (Base.equals_insensitive("ie")) {
-      if (Suffix.equals_insensitive("ex0"))
-        return 0;
-      if (Suffix.equals_insensitive("et0"))
-        return 1;
-      if (Suffix.equals_insensitive("ex1"))
-        return 2;
-      if (Suffix.equals_insensitive("et1"))
-        return 3;
-      if (Suffix.equals_insensitive("es"))
-        return 4;
-      if (Suffix.equals_insensitive("et2"))
-        return 5;
-      if (Suffix.equals_insensitive("ea"))
-        return 7;
-      return std::nullopt;
+  for (unsigned I = 1; I < Operands.size(); ++I) {
+    MCS51Operand &Op = static_cast<MCS51Operand &>(*Operands[I]);
+    if (Op.isToken()) {
+      // 'c' is the carry bit (0xD7) when used as a jb/jnb/jbc operand.
+      if (IsBitBranch && Op.getToken().equals_insensitive("c"))
+        Op.makeImm(MCConstantExpr::create(0xD7, getContext()));
+      continue;
     }
 
-    if (Base.equals_insensitive("ip")) {
-      if (Suffix.equals_insensitive("px0"))
-        return 0;
-      if (Suffix.equals_insensitive("pt0"))
-        return 1;
-      if (Suffix.equals_insensitive("px1"))
-        return 2;
-      if (Suffix.equals_insensitive("pt1"))
-        return 3;
-      if (Suffix.equals_insensitive("ps"))
-        return 4;
-      if (Suffix.equals_insensitive("pt2"))
-        return 5;
-      return std::nullopt;
-    }
-
-    if (Base.equals_insensitive("tcon")) {
-      if (Suffix.equals_insensitive("it0"))
-        return 0;
-      if (Suffix.equals_insensitive("ie0"))
-        return 1;
-      if (Suffix.equals_insensitive("it1"))
-        return 2;
-      if (Suffix.equals_insensitive("ie1"))
-        return 3;
-      if (Suffix.equals_insensitive("tr0"))
-        return 4;
-      if (Suffix.equals_insensitive("tf0"))
-        return 5;
-      if (Suffix.equals_insensitive("tr1"))
-        return 6;
-      if (Suffix.equals_insensitive("tf1"))
-        return 7;
-      return std::nullopt;
-    }
-
-    if (Base.equals_insensitive("scon")) {
-      if (Suffix.equals_insensitive("ri"))
-        return 0;
-      if (Suffix.equals_insensitive("ti"))
-        return 1;
-      if (Suffix.equals_insensitive("rb8"))
-        return 2;
-      if (Suffix.equals_insensitive("tb8"))
-        return 3;
-      if (Suffix.equals_insensitive("ren"))
-        return 4;
-      if (Suffix.equals_insensitive("sm2"))
-        return 5;
-      if (Suffix.equals_insensitive("sm1"))
-        return 6;
-      if (Suffix.equals_insensitive("sm0"))
-        return 7;
-      return std::nullopt;
-    }
-
-    return std::nullopt;
-  };
-
-  auto getNamedSRegBitOperand =
-      [mapSRegFlagNameToBit](const MCS51Operand &Op) -> std::optional<int64_t> {
-    if (!Op.isImm())
-      return std::nullopt;
-    const auto *SRE = dyn_cast<MCSymbolRefExpr>(Op.getImm());
-    if (!SRE)
-      return std::nullopt;
-    return mapSRegFlagNameToBit(SRE->getSymbol().getName());
-  };
-
-  auto getNamedBitAddressSuffixOperand =
-      [parseDottedSymbolOperand,
-       mapNamedBitSuffixForBase](const MCS51Operand &Op)
-          -> std::optional<int64_t> {
-    StringRef Base;
-    StringRef Suffix;
-    if (!parseDottedSymbolOperand(Op, Base, Suffix))
-      return std::nullopt;
-
-    return mapNamedBitSuffixForBase(Base, Suffix);
-  };
-
-  auto getBitAddressSuffixOperand =
-      [parseDottedSymbolOperand,
-       parseBitIndexSuffix](const MCS51Operand &Op) -> std::optional<int64_t> {
-    StringRef Base;
-    StringRef Suffix;
-    if (!parseDottedSymbolOperand(Op, Base, Suffix))
-      return std::nullopt;
-
-    bool KnownBitAddressBase = Base.equals_insensitive("p0") ||
-                               Base.equals_insensitive("p1") ||
-                               Base.equals_insensitive("p2") ||
-                               Base.equals_insensitive("p3") ||
-                               Base.equals_insensitive("acc") ||
-                               Base.equals_insensitive("b") ||
-                               Base.equals_insensitive("psw") ||
-                               Base.equals_insensitive("tcon") ||
-                               Base.equals_insensitive("scon") ||
-                               Base.equals_insensitive("ie") ||
-                               Base.equals_insensitive("ip");
-    if (!KnownBitAddressBase)
-      return std::nullopt;
-
-    return parseBitIndexSuffix(Suffix);
-  };
-
-  auto getPSWBitSuffixOperand =
-      [parseDottedSymbolOperand,
-       parseBitIndexSuffix](const MCS51Operand &Op) -> std::optional<int64_t> {
-    StringRef Base;
-    StringRef Suffix;
-    if (!parseDottedSymbolOperand(Op, Base, Suffix))
-      return std::nullopt;
-    if (!Base.equals_insensitive("psw"))
-      return std::nullopt;
-
-    return parseBitIndexSuffix(Suffix);
-  };
-
-    auto getPSWFlagSuffixOperand =
-        [parseDottedSymbolOperand,
-         mapSRegFlagNameToBit](const MCS51Operand &Op)
-        -> std::optional<int64_t> {
-    StringRef Base;
-    StringRef Suffix;
-    if (!parseDottedSymbolOperand(Op, Base, Suffix))
-      return std::nullopt;
-    if (!Base.equals_insensitive("psw"))
-      return std::nullopt;
-
-      return mapSRegFlagNameToBit(Suffix);
-  };
-
-  // Phase-0 bridge: normalize setb bit spellings and keep clr on parser-side
-  // rewrite to avoid ambiguity with register-clear forms.
-  if (Operands.size() == 2) {
-    auto &MnOp = static_cast<MCS51Operand &>(*Operands[0]);
-    auto &ArgOp = static_cast<MCS51Operand &>(*Operands[1]);
-    bool IsSetb = MnOp.getToken().equals_insensitive("setb");
-    bool IsClr = MnOp.getToken().equals_insensitive("clr");
-
-    if (IsSetb) {
-      if (isCarryOperand(ArgOp)) {
-        ArgOp.makeImm(MCConstantExpr::create(0, getContext()));
-      } else if (auto BitIndex = getPSWBitSuffixOperand(ArgOp)) {
-        ArgOp.makeImm(MCConstantExpr::create(*BitIndex, getContext()));
-      } else if (auto BitIndex = getPSWFlagSuffixOperand(ArgOp)) {
-        ArgOp.makeImm(MCConstantExpr::create(*BitIndex, getContext()));
-      } else if (auto BitIndex = getNamedBitAddressSuffixOperand(ArgOp)) {
-        ArgOp.makeImm(MCConstantExpr::create(*BitIndex, getContext()));
-      } else if (auto BitIndex = getNamedSRegBitOperand(ArgOp)) {
-        ArgOp.makeImm(MCConstantExpr::create(*BitIndex, getContext()));
-      } else if (auto BitIndex = getBitIndexOperand(ArgOp);
-                 BitIndex && *BitIndex >= 0 && *BitIndex <= 7) {
-        // Already normalized constant in valid bit range.
-      } else {
-        return Error(ArgOp.getStartLoc(), "invalid operand for instruction");
-      }
-    } else if (IsClr) {
-      if (isCarryOperand(ArgOp)) {
-        MnOp.makeToken("clc");
-        Operands.pop_back();
-      } else if (auto BitIndex = getPSWBitSuffixOperand(ArgOp)) {
-        MnOp.makeToken("bclr");
-        ArgOp.makeImm(MCConstantExpr::create(*BitIndex, getContext()));
-      } else if (auto BitIndex = getPSWFlagSuffixOperand(ArgOp)) {
-        MnOp.makeToken("bclr");
-        ArgOp.makeImm(MCConstantExpr::create(*BitIndex, getContext()));
-      } else if (auto BitIndex = getNamedBitAddressSuffixOperand(ArgOp)) {
-        MnOp.makeToken("bclr");
-        ArgOp.makeImm(MCConstantExpr::create(*BitIndex, getContext()));
-      } else if (auto BitIndex = getNamedSRegBitOperand(ArgOp)) {
-        MnOp.makeToken("bclr");
-        ArgOp.makeImm(MCConstantExpr::create(*BitIndex, getContext()));
-      } else if (auto BitIndex = getBitIndexOperand(ArgOp);
-                 BitIndex && *BitIndex >= 0 && *BitIndex <= 7) {
-        MnOp.makeToken("bclr");
+    // A dotted spelling that cannot be resolved to a bit address is an error
+    // rather than a symbol reference. Symbols that begin with '.' (temporary
+    // labels and the current-location symbol) are not bit addresses.
+    if (Op.isImm()) {
+      if (const auto *SRE = dyn_cast<MCSymbolRefExpr>(Op.getImm())) {
+        StringRef Name = SRE->getSymbol().getName();
+        if (!Name.empty() && Name[0] == '.')
+          continue;
+        if (Name.contains('.') && !ResolveBitAddress(Op))
+          return Error(Op.getStartLoc(), "invalid bit address");
       }
     }
-  }
 
-  // Phase-0 bridge: normalize jb/jnb bit operand spellings to 0..7 while
-  // keeping the jb/jnb mnemonic for TableGen alias matching.
-  if (Operands.size() == 3) {
-    auto &MnOp = static_cast<MCS51Operand &>(*Operands[0]);
-    auto &Arg0 = static_cast<MCS51Operand &>(*Operands[1]);
-    bool IsJB = MnOp.getToken().equals_insensitive("jb");
-    bool IsJNB = MnOp.getToken().equals_insensitive("jnb");
-
-    if (!(IsJB || IsJNB))
-      goto SkipJBJNBBridge;
-
-    if (isCarryOperand(Arg0)) {
-      Arg0.makeImm(MCConstantExpr::create(0, getContext()));
-    } else if (auto BitIndex = getNamedSRegBitOperand(Arg0)) {
-      Arg0.makeImm(MCConstantExpr::create(*BitIndex, getContext()));
-    } else if (auto BitIndex = getBitIndexOperand(Arg0);
-               BitIndex && *BitIndex >= 0 && *BitIndex <= 7) {
-      // Already normalized constant in valid bit range.
-    } else if (auto BitIndex = getBitAddressSuffixOperand(Arg0)) {
-      Arg0.makeImm(MCConstantExpr::create(*BitIndex, getContext()));
-    } else if (auto BitIndex = getPSWFlagSuffixOperand(Arg0)) {
-      Arg0.makeImm(MCConstantExpr::create(*BitIndex, getContext()));
-    } else if (auto BitIndex = getNamedBitAddressSuffixOperand(Arg0)) {
-      Arg0.makeImm(MCConstantExpr::create(*BitIndex, getContext()));
-    } else {
-      return Error(Arg0.getStartLoc(), "invalid operand for instruction");
-    }
-
-  SkipJBJNBBridge:;
-  }
-
-  // Phase-0 bridge: accept a tiny subset of 8051 accumulator-immediate forms
-  // by rewriting to available AVR-style instructions.
-  if (Operands.size() == 3 && Operands[1]->isReg() && Operands[2]->isImm()) {
-    auto &MnOp = static_cast<MCS51Operand &>(*Operands[0]);
-    auto &DstOp = static_cast<MCS51Operand &>(*Operands[1]);
-    auto &ImmOp = static_cast<MCS51Operand &>(*Operands[2]);
-
-    if (DstOp.getReg() >= MCS51::R16 && DstOp.getReg() <= MCS51::R31) {
-      if (MnOp.getToken().equals_insensitive("mov")) {
-        MnOp.makeToken("ldi");
-      } else if (MnOp.getToken().equals_insensitive("add")) {
-        MnOp.makeToken("subi");
-        const MCExpr *Imm = ImmOp.getImm();
-        const MCExpr *NegImm = nullptr;
-        if (const auto *CE = dyn_cast<MCConstantExpr>(Imm))
-          NegImm = MCConstantExpr::create(-CE->getValue(), getContext());
-        else
-          NegImm = MCUnaryExpr::createMinus(Imm, getContext());
-        ImmOp.makeImm(NegImm);
-      } else if (MnOp.getToken().equals_insensitive("anl")) {
-        MnOp.makeToken("andi");
-      } else if (MnOp.getToken().equals_insensitive("orl")) {
-        MnOp.makeToken("ori");
-      }
-    }
+    ResolveBitAddress(Op);
   }
 
   Parser.Lex(); // Consume the EndOfStatement
@@ -1100,29 +1029,8 @@ unsigned MCS51AsmParser::validateTargetOperandClass(MCParsedAsmOperand &AsmOp,
   MCS51Operand &Op = static_cast<MCS51Operand &>(AsmOp);
   MatchClassKind Expected = static_cast<MatchClassKind>(ExpectedKind);
 
-  // If need be, GCC converts bare numbers to register names
-  // It's ugly, but GCC supports it.
-  if (Op.isImm()) {
-    if (MCConstantExpr const *Const = dyn_cast<MCConstantExpr>(Op.getImm())) {
-      int64_t RegNum = Const->getValue();
-
-      // Reject R0~R15 on avrtiny.
-      if (0 <= RegNum && RegNum <= 15 &&
-          STI->hasFeature(MCS51::FeatureTinyEncoding))
-        return Match_InvalidRegisterOnTiny;
-
-      std::ostringstream RegName;
-      RegName << "r" << RegNum;
-      RegNum = MatchRegisterName(RegName.str());
-      if (RegNum != MCS51::NoRegister) {
-        Op.makeReg(RegNum);
-        if (validateOperandClass(Op, Expected, *STI) == Match_Success) {
-          return Match_Success;
-        }
-      }
-      // Let the other quirks try their magic.
-    }
-  }
+  // NOTE: Unlike AVR, bare numbers in 8051 assembly are direct addresses,
+  // never register numbers. Do not reinterpret immediates as registers.
 
   if (Op.isReg()) {
     // If the instruction uses a register pair but we got a single, lower

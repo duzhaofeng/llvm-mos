@@ -1,19 +1,18 @@
-; RUN: llvm-mc -triple avr -arch=mcs51 -mcpu=mcs51 -show-encoding < %s | FileCheck %s
+; RUN: llvm-mc -triple avr -mcpu=mcs51 -show-encoding < %s | FileCheck %s
 ;
-; Phase-0 jmp/call smoke: default mcs51 now enables jmp/call support, and
-; ljmp/lcall bridge to those absolute forms.
+; Native 8051 jump/call forms.
 
-        jmp target
-        call target
-        ljmp target
+        sjmp target
         ajmp target
+        ljmp target
         acall target
         lcall target
 target:
         ret
 
-; CHECK: jmp{{[[:space:]]+}}target
-; CHECK: call{{[[:space:]]+}}target
-; CHECK: jmp{{[[:space:]]+}}target
-; CHECK: call{{[[:space:]]+}}target
+; CHECK: sjmp{{[[:space:]]+}}target
+; CHECK: ajmp{{[[:space:]]+}}target
+; CHECK: ljmp{{[[:space:]]+}}target
+; CHECK: acall{{[[:space:]]+}}target
+; CHECK: lcall{{[[:space:]]+}}target
 ; CHECK: ret

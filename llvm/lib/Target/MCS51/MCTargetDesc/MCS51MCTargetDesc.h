@@ -13,6 +13,7 @@
 #ifndef LLVM_MCS51_MCTARGET_DESC_H
 #define LLVM_MCS51_MCTARGET_DESC_H
 
+#include "llvm/MC/MCInstrDesc.h"
 #include "llvm/Support/DataTypes.h"
 
 #include <memory>
@@ -42,6 +43,15 @@ MCAsmBackend *createMCS51AsmBackend(const Target &T, const MCSubtargetInfo &STI,
 
 /// Creates an ELF object writer for MCS51.
 std::unique_ptr<MCObjectTargetWriter> createMCS51ELFObjectWriter(uint8_t OSABI);
+
+namespace MCS51Op {
+
+enum OperandType : unsigned {
+  OPERAND_ADDR16 = MCOI::OPERAND_FIRST_TARGET,
+  OPERAND_ADDR11,
+};
+
+} // namespace MCS51Op
 
 } // end namespace llvm
 

@@ -574,3 +574,233 @@ class ShiftPseudo<dag outs, dag ins, string asmstr, list<dag> pattern>
 
   let Defs = [SREG];
 }
+
+//===---------------------------------------------------------------------===//
+// Native MCS51 (8051) variable-length instruction formats.
+//
+// The real 8051 instruction set is variable-length (1/2/3 bytes), unlike the
+// legacy AVR-derived instruction set above (fixed 16/32-bit). These classes
+// are isolated behind the "MCS51N" DecoderNamespace so their decoder tables
+// never collide with the legacy AVR-derived tables during decode.
+//===---------------------------------------------------------------------===//
+
+class MCS51NInst<dag outs, dag ins, string asmstr, list<dag> pattern>
+    : Instruction {
+  let Namespace = "MCS51";
+  let DecoderNamespace = "MCS51N";
+
+  dag OutOperandList = outs;
+  dag InOperandList = ins;
+  let AsmString = asmstr;
+  let Pattern = pattern;
+}
+
+/// A 1-byte native 8051 instruction.
+class MCS51NInst8<dag outs, dag ins, string asmstr, list<dag> pattern>
+    : MCS51NInst<outs, ins, asmstr, pattern> {
+  field bits<8> Inst;
+  let Size = 1;
+}
+
+/// A 2-byte native 8051 instruction.
+class MCS51NInst16<dag outs, dag ins, string asmstr, list<dag> pattern>
+    : MCS51NInst<outs, ins, asmstr, pattern> {
+  field bits<16> Inst;
+  let Size = 2;
+}
+
+/// A 3-byte native 8051 instruction.
+class MCS51NInst24<dag outs, dag ins, string asmstr, list<dag> pattern>
+    : MCS51NInst<outs, ins, asmstr, pattern> {
+  field bits<24> Inst;
+  let Size = 3;
+}
+
+//===---------------------------------------------------------------------===//
+// Encoding format helpers.
+//===---------------------------------------------------------------------===//
+
+/// 1-byte instruction with a fixed opcode (no encoded operands).
+class MCS51N1<bits<8> opcode, string asmstr>
+    : MCS51NInst8<(outs), (ins), asmstr, []> {
+  let Inst{7-0} = opcode;
+}
+
+/// 1-byte instruction with a 3-bit Rn field in the opcode's low bits.
+class MCS51NRn<bits<5> opcode_hi, dag ins, string asmstr>
+    : MCS51NInst8<(outs), ins, asmstr, []> {
+  bits<3> rn;
+  let Inst{7-3} = opcode_hi;
+  let Inst{2-0} = rn;
+}
+
+/// 1-byte instruction with a 1-bit Ri field in the opcode's low bit.
+class MCS51NRi<bits<7> opcode_hi, dag ins, string asmstr>
+    : MCS51NInst8<(outs), ins, asmstr, []> {
+  bits<1> ri;
+  let Inst{7-1} = opcode_hi;
+  let Inst{0} = ri;
+}
+
+/// 2-byte instruction: opcode(low 3 bits Rn) + operand byte.
+class MCS51NRnK<bits<5> opcode_hi, dag ins, string asmstr>
+    : MCS51NInst16<(outs), ins, asmstr, []> {
+  bits<3> rn;
+  bits<8> k;
+  let Inst{7-3} = opcode_hi;
+  let Inst{2-0} = rn;
+  let Inst{15-8} = k;
+}
+
+/// 2-byte instruction: opcode(low 3 bits Rn) + rel8 (DJNZ).
+class MCS51NRnRel<bits<5> opcode_hi, dag ins, string asmstr>
+    : MCS51NInst16<(outs), ins, asmstr, []> {
+  bits<3> rn;
+  bits<8> rel;
+  let Inst{7-3} = opcode_hi;
+  let Inst{2-0} = rn;
+  let Inst{15-8} = rel;
+}
+
+/// 3-byte instruction: opcode(low 3 bits Rn) + imm8 + rel8 (CJNE Rn).
+class MCS51NRnKRel<bits<5> opcode_hi, dag ins, string asmstr>
+    : MCS51NInst24<(outs), ins, asmstr, []> {
+  bits<3> rn;
+  bits<8> imm;
+  bits<8> rel;
+  let Inst{7-3} = opcode_hi;
+  let Inst{2-0} = rn;
+  let Inst{15-8} = imm;
+  let Inst{23-16} = rel;
+}
+
+/// 2-byte instruction: opcode(low 1 bit Ri) + operand byte.
+class MCS51NRiK<bits<7> opcode_hi, dag ins, string asmstr>
+    : MCS51NInst16<(outs), ins, asmstr, []> {
+  bits<1> ri;
+  bits<8> k;
+  let Inst{7-1} = opcode_hi;
+  let Inst{0} = ri;
+  let Inst{15-8} = k;
+}
+
+/// 3-byte instruction: opcode(low 1 bit Ri) + imm8 + rel8 (CJNE @Ri).
+class MCS51NRiKRel<bits<7> opcode_hi, dag ins, string asmstr>
+    : MCS51NInst24<(outs), ins, asmstr, []> {
+  bits<1> ri;
+  bits<8> imm;
+  bits<8> rel;
+  let Inst{7-1} = opcode_hi;
+  let Inst{0} = ri;
+  let Inst{15-8} = imm;
+  let Inst{23-16} = rel;
+}
+
+/// 2-byte instruction: opcode + 8-bit direct address.
+class MCS51NDirect<bits<8> opcode, dag ins, string asmstr>
+    : MCS51NInst16<(outs), ins, asmstr, []> {
+  bits<8> direct;
+  let Inst{7-0} = opcode;
+  let Inst{15-8} = direct;
+}
+
+/// 2-byte instruction: opcode + 8-bit immediate.
+class MCS51NImm8<bits<8> opcode, dag ins, string asmstr>
+    : MCS51NInst16<(outs), ins, asmstr, []> {
+  bits<8> imm;
+  let Inst{7-0} = opcode;
+  let Inst{15-8} = imm;
+}
+
+/// 2-byte instruction: opcode + rel8.
+class MCS51NRel<bits<8> opcode, dag ins, string asmstr>
+    : MCS51NInst16<(outs), ins, asmstr, []> {
+  bits<8> rel;
+  let Inst{7-0} = opcode;
+  let Inst{15-8} = rel;
+}
+
+/// 2-byte instruction: opcode + 8-bit bit address.
+class MCS51NBit<bits<8> opcode, dag ins, string asmstr>
+    : MCS51NInst16<(outs), ins, asmstr, []> {
+  bits<8> bitaddr;
+  let Inst{7-0} = opcode;
+  let Inst{15-8} = bitaddr;
+}
+
+/// 3-byte instruction: opcode + direct + imm8.
+class MCS51NDirectImm<bits<8> opcode, dag ins, string asmstr>
+    : MCS51NInst24<(outs), ins, asmstr, []> {
+  bits<8> direct;
+  bits<8> imm;
+  let Inst{7-0} = opcode;
+  let Inst{15-8} = direct;
+  let Inst{23-16} = imm;
+}
+
+/// 3-byte instruction: opcode + direct + rel8.
+class MCS51NDirectRel<bits<8> opcode, dag ins, string asmstr>
+    : MCS51NInst24<(outs), ins, asmstr, []> {
+  bits<8> direct;
+  bits<8> rel;
+  let Inst{7-0} = opcode;
+  let Inst{15-8} = direct;
+  let Inst{23-16} = rel;
+}
+
+/// 3-byte instruction: opcode + imm8 + rel8 (CJNE A, #imm, rel).
+class MCS51NImmRel<bits<8> opcode, dag ins, string asmstr>
+    : MCS51NInst24<(outs), ins, asmstr, []> {
+  bits<8> imm;
+  bits<8> rel;
+  let Inst{7-0} = opcode;
+  let Inst{15-8} = imm;
+  let Inst{23-16} = rel;
+}
+
+/// 3-byte instruction: opcode + direct(src) + direct(dst).
+/// (MOV direct, direct encodes the source byte before the destination byte.)
+class MCS51NDirectDirect<bits<8> opcode, dag ins, string asmstr>
+    : MCS51NInst24<(outs), ins, asmstr, []> {
+  bits<8> src;
+  bits<8> dst;
+  let Inst{7-0} = opcode;
+  let Inst{15-8} = src;
+  let Inst{23-16} = dst;
+}
+
+/// 3-byte instruction: opcode + bit + rel8.
+class MCS51NBitRel<bits<8> opcode, dag ins, string asmstr>
+    : MCS51NInst24<(outs), ins, asmstr, []> {
+  bits<8> bitaddr;
+  bits<8> rel;
+  let Inst{7-0} = opcode;
+  let Inst{15-8} = bitaddr;
+  let Inst{23-16} = rel;
+}
+
+/// 3-byte instruction: opcode + 16-bit immediate (big-endian on the wire).
+class MCS51NImm16<bits<8> opcode, dag ins, string asmstr>
+    : MCS51NInst24<(outs), ins, asmstr, []> {
+  bits<16> imm;
+  let Inst{7-0} = opcode;
+  let Inst{23-8} = imm;
+}
+
+/// 3-byte instruction: opcode + 16-bit absolute address (big-endian).
+class MCS51NAddr16<bits<8> opcode, dag ins, string asmstr>
+    : MCS51NInst24<(outs), ins, asmstr, []> {
+  bits<16> addr;
+  let Inst{7-0} = opcode;
+  let Inst{23-8} = addr;
+}
+
+/// 2-byte ACALL/AJMP with an 11-bit address split between the opcode's high
+/// 3 bits and the second byte. Uses an instruction-level DecoderMethod because
+/// the address field is not contiguous.
+class MCS51NAddr11<bits<5> opcode_lo, dag ins, string asmstr>
+    : MCS51NInst16<(outs), ins, asmstr, []> {
+  let DecoderMethod = "decodeMCS51Addr11";
+  let Inst{4-0} = opcode_lo;
+  // Inst{7-5} (addr10-8) and Inst{15-8} (addr7-0) are left as "don't care".
+}

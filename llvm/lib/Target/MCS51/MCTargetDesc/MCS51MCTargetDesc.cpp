@@ -15,6 +15,7 @@
 #include "MCS51InstPrinter.h"
 #include "MCS51MCAsmInfo.h"
 #include "MCS51MCELFStreamer.h"
+#include "MCS51MCInstrAnalysis.h"
 #include "MCS51TargetStreamer.h"
 #include "TargetInfo/MCS51TargetInfo.h"
 
@@ -69,6 +70,10 @@ static MCInstPrinter *createMCS51MCInstPrinter(const Triple &T,
   return nullptr;
 }
 
+static MCInstrAnalysis *createMCS51MCInstrAnalysis(const MCInstrInfo *Info) {
+  return new MCS51MCInstrAnalysis(Info);
+}
+
 static MCStreamer *createMCStreamer(const Triple &T, MCContext &Context,
                                     std::unique_ptr<MCAsmBackend> &&MAB,
                                     std::unique_ptr<MCObjectWriter> &&OW,
@@ -105,6 +110,10 @@ extern "C" LLVM_EXTERNAL_VISIBILITY void LLVMInitializeMCS51TargetMC() {
   // Register the MCInstPrinter.
   TargetRegistry::RegisterMCInstPrinter(getTheMCS51Target(),
                                         createMCS51MCInstPrinter);
+
+  // Register the MC instruction analysis.
+  TargetRegistry::RegisterMCInstrAnalysis(getTheMCS51Target(),
+                                          createMCS51MCInstrAnalysis);
 
   // Register the MC Code Emitter
   TargetRegistry::RegisterMCCodeEmitter(getTheMCS51Target(),

@@ -1,7 +1,6 @@
-; RUN: llvm-mc -triple avr -arch=mcs51 -mcpu=mcs51 -show-encoding < %s | FileCheck %s
+; RUN: llvm-mc -triple avr -mcpu=mcs51 -show-encoding < %s | FileCheck %s
 ;
-; Phase-0 alias/case smoke: verify case-insensitive alias spellings for
-; accumulator and carry flag across bridge rewrites.
+; Case-insensitive accumulator and carry spellings.
 
         MOV ACC, #0x2A
         CPL ACC
@@ -15,12 +14,20 @@
 target:
         RET
 
-; CHECK: ldi{{[[:space:]]+}}r16, 42
-; CHECK: cpl{{[[:space:]]+}}r16
-; CHECK: sec
-; CHECK: clc
-; CHECK: jb{{[[:space:]]+}}0, target
-; CHECK: jnb{{[[:space:]]+}}0, target
-; CHECK: push{{[[:space:]]+}}r16
-; CHECK: pop{{[[:space:]]+}}r16
+; CHECK: mov{{[[:space:]]+}}a, #42
+; CHECK: encoding: [0x74,0x2a]
+; CHECK: cpl{{[[:space:]]+}}a
+; CHECK: encoding: [0xf4]
+; CHECK: setb{{[[:space:]]+}}c
+; CHECK: encoding: [0xd3]
+; CHECK: clr{{[[:space:]]+}}c
+; CHECK: encoding: [0xc3]
+; CHECK: jb{{[[:space:]]+}}PSW.7, target
+; CHECK: encoding: [0x20,0xd7,0x00]
+; CHECK: jnb{{[[:space:]]+}}PSW.7, target
+; CHECK: encoding: [0x30,0xd7,0x00]
+; CHECK: push{{[[:space:]]+}}ACC
+; CHECK: encoding: [0xc0,0xe0]
+; CHECK: pop{{[[:space:]]+}}ACC
+; CHECK: encoding: [0xd0,0xe0]
 ; CHECK: ret

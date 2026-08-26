@@ -14,6 +14,7 @@
 
 #include "MCTargetDesc/MCS51MCTargetDesc.h"
 
+#include "llvm/ADT/StringExtras.h"
 #include "llvm/MC/MCAsmInfo.h"
 #include "llvm/MC/MCExpr.h"
 #include "llvm/MC/MCInst.h"
@@ -194,6 +195,101 @@ void MCS51InstPrinter::printMemri(const MCInst *MI, unsigned OpNo,
   } else {
     llvm_unreachable("unknown type for offset");
   }
+}
+
+/// Return the name of the Special Function Register at byte address \p Addr,
+/// or an empty StringRef if \p Addr is not a standard 8051 SFR.
+static StringRef getSFRName(unsigned Addr) {
+  switch (Addr) {
+  case 0x80: return "P0";
+  case 0x81: return "SP";
+  case 0x82: return "DPL";
+  case 0x83: return "DPH";
+  case 0x87: return "PCON";
+  case 0x88: return "TCON";
+  case 0x89: return "TMOD";
+  case 0x8A: return "TL0";
+  case 0x8B: return "TL1";
+  case 0x8C: return "TH0";
+  case 0x8D: return "TH1";
+  case 0x90: return "P1";
+  case 0x98: return "SCON";
+  case 0x99: return "SBUF";
+  case 0xA0: return "P2";
+  case 0xA8: return "IE";
+  case 0xB0: return "P3";
+  case 0xB8: return "IP";
+  case 0xD0: return "PSW";
+  case 0xE0: return "ACC";
+  case 0xF0: return "B";
+  default: return StringRef();
+  }
+}
+
+/// Return the name of the bit-addressable SFR whose byte address is
+/// \p ByteAddr, or an empty StringRef if that byte is not bit-addressable
+/// on the standard 8051.
+static StringRef getBitAddressableSFRName(unsigned ByteAddr) {
+  switch (ByteAddr) {
+  case 0x80: return "P0";
+  case 0x88: return "TCON";
+  case 0x90: return "P1";
+  case 0x98: return "SCON";
+  case 0xA0: return "P2";
+  case 0xA8: return "IE";
+  case 0xB0: return "P3";
+  case 0xB8: return "IP";
+  case 0xD0: return "PSW";
+  case 0xE0: return "ACC";
+  case 0xF0: return "B";
+  default: return StringRef();
+  }
+}
+
+void MCS51InstPrinter::printMCS51Direct(const MCInst *MI, unsigned OpNo,
+                                        raw_ostream &O) {
+  const MCOperand &Op = MI->getOperand(OpNo);
+  if (!Op.isImm()) {
+    printOperand(MI, OpNo, O);
+    return;
+  }
+
+  unsigned Addr = Op.getImm();
+  StringRef Name = getSFRName(Addr);
+  if (!Name.empty())
+    O << Name;
+  else
+    O << formatImm(Addr);
+}
+
+void MCS51InstPrinter::printMCS51Bit(const MCInst *MI, unsigned OpNo,
+                                     raw_ostream &O) {
+  const MCOperand &Op = MI->getOperand(OpNo);
+  if (!Op.isImm()) {
+    printOperand(MI, OpNo, O);
+    return;
+  }
+
+  unsigned BitAddr = Op.getImm();
+  unsigned BitNo = BitAddr & 0x7;
+
+  if (BitAddr < 0x80) {
+    // Internal RAM bit: byte address 0x20 + (BitAddr / 8).
+    unsigned ByteAddr = 0x20 + (BitAddr >> 3);
+    O << "0x" << utohexstr(ByteAddr, /*LowerCase=*/true) << '.' << BitNo;
+  } else if (StringRef Name = getBitAddressableSFRName(BitAddr & 0xF8);
+             !Name.empty()) {
+    O << Name << '.' << BitNo;
+  } else {
+    O << formatImm(BitAddr);
+  }
+}
+
+void MCS51InstPrinter::printMCS51Imm(const MCInst *MI, unsigned OpNo,
+                                     raw_ostream &O) {
+  // 8051 immediates are spelled with a leading '#'.
+  O << '#';
+  printOperand(MI, OpNo, O);
 }
 
 } // end of namespace llvm

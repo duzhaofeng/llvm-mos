@@ -1,24 +1,32 @@
-; RUN: llvm-mc -triple avr -arch=mcs51 -mcpu=mcs51 -show-encoding < %s | FileCheck %s
+; RUN: llvm-mc -triple avr -mcpu=mcs51 -show-encoding < %s | FileCheck %s
 ;
-; Phase-0 bridge test: psw.<flag> supports readable long-name suffix aliases.
+; psw.<flag> long-name suffix aliases.
 
         setb psw.carry
-        clr psw.zero
+        clr psw.ac
         jb psw.overflow, done
-        jnb psw.interrupt, done
+        jnb psw.parity, done
         setb psw.ovf
-        clr psw.irq
+        clr psw.rs0
         jb psw.auxcarry, done
-        jnb psw.sign, done
+        jnb psw.f0, done
 done:
         ret
 
-; CHECK: sec
-; CHECK: {{(clz|bclr[[:space:]]+1)}}
-; CHECK: jb{{[[:space:]]+}}3, done
-; CHECK: jnb{{[[:space:]]+}}7, done
-; CHECK: sev
-; CHECK: cli
-; CHECK: jb{{[[:space:]]+}}5, done
-; CHECK: jnb{{[[:space:]]+}}4, done
+; CHECK: setb{{[[:space:]]+}}PSW.7
+; CHECK: encoding: [0xd2,0xd7]
+; CHECK: clr{{[[:space:]]+}}PSW.6
+; CHECK: encoding: [0xc2,0xd6]
+; CHECK: jb{{[[:space:]]+}}PSW.2, done
+; CHECK: encoding: [0x20,0xd2,0x00]
+; CHECK: jnb{{[[:space:]]+}}PSW.0, done
+; CHECK: encoding: [0x30,0xd0,0x00]
+; CHECK: setb{{[[:space:]]+}}PSW.2
+; CHECK: encoding: [0xd2,0xd2]
+; CHECK: clr{{[[:space:]]+}}PSW.3
+; CHECK: encoding: [0xc2,0xd3]
+; CHECK: jb{{[[:space:]]+}}PSW.6, done
+; CHECK: encoding: [0x20,0xd6,0x00]
+; CHECK: jnb{{[[:space:]]+}}PSW.5, done
+; CHECK: encoding: [0x30,0xd5,0x00]
 ; CHECK: ret

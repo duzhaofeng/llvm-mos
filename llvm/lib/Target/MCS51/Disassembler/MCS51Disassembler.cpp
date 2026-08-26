@@ -139,6 +139,30 @@ static DecodeStatus decodeLoadStore(MCInst &Inst, unsigned Insn,
                                     uint64_t Address,
                                     const MCDisassembler *Decoder);
 
+static DecodeStatus DecodeGPR8rnRegisterClass(MCInst &Inst, unsigned RegNo,
+                                              uint64_t Address,
+                                              const MCDisassembler *Decoder);
+
+static DecodeStatus decodeMCS51Imm8(MCInst &Inst, unsigned Imm,
+                                    uint64_t Address,
+                                    const MCDisassembler *Decoder);
+
+static DecodeStatus decodeMCS51Rel8(MCInst &Inst, unsigned Imm,
+                                    uint64_t Address,
+                                    const MCDisassembler *Decoder);
+
+static DecodeStatus DecodeGPR8riRegisterClass(MCInst &Inst, unsigned RegNo,
+                                              uint64_t Address,
+                                              const MCDisassembler *Decoder);
+
+static DecodeStatus decodeMCS51Imm16(MCInst &Inst, unsigned Imm,
+                                     uint64_t Address,
+                                     const MCDisassembler *Decoder);
+
+static DecodeStatus decodeMCS51Addr11(MCInst &Inst, unsigned Insn,
+                                      uint64_t Address,
+                                      const MCDisassembler *Decoder);
+
 #include "MCS51GenDisassemblerTables.inc"
 
 static DecodeStatus decodeFIOARr(MCInst &Inst, unsigned Insn, uint64_t Address,
@@ -435,6 +459,62 @@ static DecodeStatus decodeLoadStore(MCInst &Inst, unsigned Insn,
   return MCDisassembler::Success;
 }
 
+static DecodeStatus DecodeGPR8rnRegisterClass(MCInst &Inst, unsigned RegNo,
+                                              uint64_t Address,
+                                              const MCDisassembler *Decoder) {
+  if (RegNo > 7)
+    return MCDisassembler::Fail;
+
+  Inst.addOperand(MCOperand::createReg(GPRDecoderTable[RegNo]));
+  return MCDisassembler::Success;
+}
+
+static DecodeStatus decodeMCS51Imm8(MCInst &Inst, unsigned Imm,
+                                    uint64_t Address,
+                                    const MCDisassembler *Decoder) {
+  Inst.addOperand(MCOperand::createImm(Imm));
+  return MCDisassembler::Success;
+}
+
+static DecodeStatus decodeMCS51Rel8(MCInst &Inst, unsigned Imm,
+                                    uint64_t Address,
+                                    const MCDisassembler *Decoder) {
+  Inst.addOperand(
+      MCOperand::createImm(static_cast<int64_t>(static_cast<int8_t>(Imm))));
+  return MCDisassembler::Success;
+}
+
+static DecodeStatus DecodeGPR8riRegisterClass(MCInst &Inst, unsigned RegNo,
+                                              uint64_t Address,
+                                              const MCDisassembler *Decoder) {
+  if (RegNo > 1)
+    return MCDisassembler::Fail;
+
+  Inst.addOperand(MCOperand::createReg(GPRDecoderTable[RegNo]));
+  return MCDisassembler::Success;
+}
+
+static DecodeStatus decodeMCS51Imm16(MCInst &Inst, unsigned Imm,
+                                     uint64_t Address,
+                                     const MCDisassembler *Decoder) {
+  // 8051 stores 16-bit immediates/addresses big-endian, while the decoder
+  // framework extracts the operand field little-endian. Swap the bytes back.
+  unsigned Lo = Imm & 0xff;
+  unsigned Hi = (Imm >> 8) & 0xff;
+  Inst.addOperand(MCOperand::createImm((Lo << 8) | Hi));
+  return MCDisassembler::Success;
+}
+
+static DecodeStatus decodeMCS51Addr11(MCInst &Inst, unsigned Insn,
+                                      uint64_t Address,
+                                      const MCDisassembler *Decoder) {
+  // ACALL/AJMP: addr10-8 live in Insn[7:5], addr7-0 live in Insn[15:8].
+  unsigned Addr = ((Insn >> 5) & 0x7) << 8;
+  Addr |= (Insn >> 8) & 0xff;
+  Inst.addOperand(MCOperand::createImm(Addr));
+  return MCDisassembler::Success;
+}
+
 static DecodeStatus readInstruction16(ArrayRef<uint8_t> Bytes, uint64_t Address,
                                       uint64_t &Size, uint32_t &Insn) {
   if (Bytes.size() < 2) {
@@ -482,6 +562,38 @@ DecodeStatus MCS51Disassembler::getInstruction(MCInst &Instr, uint64_t &Size,
   uint32_t Insn;
 
   DecodeStatus Result;
+
+  // Try to decode a native 8051 instruction first. The 8051 instruction set
+  // is variable-length (1/2/3 bytes) with the first byte determining the
+  // length. These tables are isolated behind the "MCS51N" decoder namespace
+  // so they do not collide with the legacy AVR-derived 16/32-bit tables.
+  for (uint64_t InsnSize = 1; InsnSize <= 3; ++InsnSize) {
+    if (Bytes.size() < InsnSize)
+      break;
+
+    uint32_t NativeInsn = 0;
+    for (uint64_t I = 0; I < InsnSize; ++I)
+      NativeInsn |= static_cast<uint32_t>(Bytes[I]) << (8 * I);
+
+    const uint8_t *Table = nullptr;
+    switch (InsnSize) {
+    case 1:
+      Table = DecoderTableMCS51N8;
+      break;
+    case 2:
+      Table = DecoderTableMCS51N16;
+      break;
+    case 3:
+      Table = DecoderTableMCS51N24;
+      break;
+    }
+
+    Result = decodeInstruction(Table, Instr, NativeInsn, Address, this, STI);
+    if (Result != MCDisassembler::Fail) {
+      Size = InsnSize;
+      return Result;
+    }
+  }
 
   // Try decode a 16-bit instruction.
   {

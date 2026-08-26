@@ -61,8 +61,10 @@ def MCS51AsmParser : AsmParser {
 def MCS51AsmParserVariant : AsmParserVariant {
   int Variant = 0;
 
-  // Recognize hard coded registers.
-  string RegisterPrefix = "$";
+  // 8051 registers (a, b, c, dptr, r0..r7) have no prefix; the empty prefix
+  // lets AsmString literals like "a"/"c"/"dptr" be recognized as singleton
+  // registers by the matcher.
+  string RegisterPrefix = "";
   string TokenizingCharacters = "+";
 }
 
