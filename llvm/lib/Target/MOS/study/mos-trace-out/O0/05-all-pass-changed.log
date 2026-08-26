@@ -1,0 +1,2001 @@
+*** IR Dump After Analysis containing CSE Info (cseinfo) on f omitted because no change ***
+*** IR Dump After IRTranslator (irtranslator) on f ***
+# Machine code for function f: IsSSA, TracksLiveness
+Frame Objects:
+  fi#0: size=2, align=1, at location [SP]
+  fi#1: size=2, align=1, at location [SP]
+
+bb.1.entry:
+  successors: %bb.2, %bb.3
+  liveins: $a, $x
+  %1:_(s8) = COPY $a
+  %2:_(s8) = COPY $x
+  %0:_(s16) = G_MERGE_VALUES %1:_(s8), %2:_(s8)
+  %6:_(s16) = G_CONSTANT i16 0
+  %8:_(s16) = G_CONSTANT i16 1
+  %3:_(p0) = G_FRAME_INDEX %stack.0.retval
+  %4:_(p0) = G_FRAME_INDEX %stack.1.x.addr
+  G_STORE %0:_(s16), %4:_(p0) :: (store (s16) into %ir.x.addr, align 1)
+  %5:_(s16) = G_LOAD %4:_(p0) :: (dereferenceable load (s16) from %ir.x.addr, align 1)
+  %7:_(s1) = G_ICMP intpred(ne), %5:_(s16), %6:_
+  G_BRCOND %7:_(s1), %bb.2
+  G_BR %bb.3
+
+bb.2.if.then:
+; predecessors: %bb.1
+  successors: %bb.4(0x80000000); %bb.4(100.00%)
+
+  G_STORE %8:_(s16), %3:_(p0) :: (store (s16) into %ir.retval, align 1)
+  G_BR %bb.4
+
+bb.3.if.end:
+; predecessors: %bb.1
+  successors: %bb.4(0x80000000); %bb.4(100.00%)
+
+  G_STORE %6:_(s16), %3:_(p0) :: (store (s16) into %ir.retval, align 1)
+
+bb.4.return:
+; predecessors: %bb.3, %bb.2
+
+  %9:_(s16) = G_LOAD %3:_(p0) :: (dereferenceable load (s16) from %ir.retval, align 1)
+  %10:_(s8), %11:_(s8) = G_UNMERGE_VALUES %9:_(s16)
+  $a = COPY %10:_(s8)
+  $x = COPY %11:_(s8)
+  RTS implicit $a, implicit $x
+
+# End machine code for function f.
+
+*** IR Dump After Analysis for ComputingKnownBits (gisel-known-bits) on f omitted because no change ***
+*** IR Dump After MachineDominator Tree Construction (machinedomtree) on f omitted because no change ***
+*** IR Dump After Analysis containing CSE Info (cseinfo) on f omitted because no change ***
+*** IR Dump After MOSCombiner (mos-combiner) on f ***
+# Machine code for function f: IsSSA, TracksLiveness
+Frame Objects:
+  fi#0: size=2, align=1, at location [SP]
+  fi#1: size=2, align=1, at location [SP]
+
+bb.1.entry:
+  successors: %bb.2, %bb.3
+  liveins: $a, $x
+  %1:_(s8) = COPY $a
+  %2:_(s8) = COPY $x
+  %0:_(s16) = G_MERGE_VALUES %1:_(s8), %2:_(s8)
+  %6:_(s16) = G_CONSTANT i16 0
+  %8:_(s16) = G_CONSTANT i16 1
+  %3:_(p0) = G_FRAME_INDEX %stack.0.retval
+  %4:_(p0) = G_FRAME_INDEX %stack.1.x.addr
+  G_STORE %0:_(s16), %4:_(p0) :: (store (s16) into %ir.x.addr, align 1)
+  %5:_(s16) = G_LOAD %4:_(p0) :: (dereferenceable load (s16) from %ir.x.addr, align 1)
+  %7:_(s1) = G_ICMP intpred(eq), %5:_(s16), %6:_
+  G_BRCOND %7:_(s1), %bb.3
+  G_BR %bb.2
+
+bb.2.if.then:
+; predecessors: %bb.1
+  successors: %bb.4(0x80000000); %bb.4(100.00%)
+
+  G_STORE %8:_(s16), %3:_(p0) :: (store (s16) into %ir.retval, align 1)
+  G_BR %bb.4
+
+bb.3.if.end:
+; predecessors: %bb.1
+  successors: %bb.4(0x80000000); %bb.4(100.00%)
+
+  G_STORE %6:_(s16), %3:_(p0) :: (store (s16) into %ir.retval, align 1)
+
+bb.4.return:
+; predecessors: %bb.3, %bb.2
+
+  %9:_(s16) = G_LOAD %3:_(p0) :: (dereferenceable load (s16) from %ir.retval, align 1)
+  %10:_(s8), %11:_(s8) = G_UNMERGE_VALUES %9:_(s16)
+  $a = COPY %10:_(s8)
+  $x = COPY %11:_(s8)
+  RTS implicit $a, implicit $x
+
+# End machine code for function f.
+
+*** IR Dump After Optimize MOS Increment/Decrement PHI pattern (mos-incdecphi) on f omitted because no change ***
+*** IR Dump After MachineDominator Tree Construction (machinedomtree) on f omitted because no change ***
+*** IR Dump After MOS Shift/Rotate Chaining (mos-shift-rotate-chain) on f omitted because no change ***
+*** IR Dump After Analysis containing CSE Info (cseinfo) on f omitted because no change ***
+*** IR Dump After Analysis for ComputingKnownBits (gisel-known-bits) on f omitted because no change ***
+*** IR Dump After Legalizer (legalizer) on f ***
+# Machine code for function f: IsSSA, TracksLiveness, Legalized
+Frame Objects:
+  fi#0: size=2, align=1, at location [SP]
+  fi#1: size=2, align=1, at location [SP]
+
+bb.1.entry:
+  successors: %bb.2, %bb.3
+  liveins: $a, $x
+  %1:_(s8) = COPY $a
+  %2:_(s8) = COPY $x
+  %38:_(s8) = G_CONSTANT i8 0
+  %37:_(s8) = G_CONSTANT i8 1
+  %3:_(p0) = G_FRAME_INDEX %stack.0.retval
+  %4:_(p0) = G_FRAME_INDEX %stack.1.x.addr
+  G_STORE_INDIR_IDX %1:_(s8), %4:_(p0), %38:_ :: (store (s8) into %ir.x.addr)
+  G_STORE_INDIR_IDX %2:_(s8), %4:_(p0), %37:_ :: (store (s8) into %ir.x.addr + 1)
+  %34:_(s8) = G_LOAD_INDIR_IDX %4:_(p0), %38:_ :: (dereferenceable load (s8) from %ir.x.addr)
+  %36:_(s8) = G_LOAD_INDIR_IDX %4:_(p0), %37:_ :: (dereferenceable load (s8) from %ir.x.addr + 1)
+  %7:_(s1) = G_CMPZ %34:_(s8), %36:_(s8)
+  G_BRCOND_IMM %7:_(s1), %bb.3, 1
+  G_BR %bb.2
+
+bb.2.if.then:
+; predecessors: %bb.1
+  successors: %bb.4(0x80000000); %bb.4(100.00%)
+
+  %25:_(s8) = G_CONSTANT i8 0
+  G_STORE_INDIR_IDX %37:_(s8), %3:_(p0), %25:_ :: (store (s8) into %ir.retval)
+  %24:_(s8) = G_CONSTANT i8 1
+  G_STORE_INDIR_IDX %38:_(s8), %3:_(p0), %24:_ :: (store (s8) into %ir.retval + 1)
+  G_BR %bb.4
+
+bb.3.if.end:
+; predecessors: %bb.1
+  successors: %bb.4(0x80000000); %bb.4(100.00%)
+
+  %31:_(s8) = G_CONSTANT i8 0
+  G_STORE_INDIR_IDX %38:_(s8), %3:_(p0), %31:_ :: (store (s8) into %ir.retval)
+  %30:_(s8) = G_CONSTANT i8 1
+  G_STORE_INDIR_IDX %38:_(s8), %3:_(p0), %30:_ :: (store (s8) into %ir.retval + 1)
+
+bb.4.return:
+; predecessors: %bb.3, %bb.2
+
+  %19:_(s8) = G_CONSTANT i8 0
+  %14:_(s8) = G_LOAD_INDIR_IDX %3:_(p0), %19:_ :: (dereferenceable load (s8) from %ir.retval)
+  %18:_(s8) = G_CONSTANT i8 1
+  %17:_(s8) = G_LOAD_INDIR_IDX %3:_(p0), %18:_ :: (dereferenceable load (s8) from %ir.retval + 1)
+  $a = COPY %14:_(s8)
+  $x = COPY %17:_(s8)
+  RTS implicit $a, implicit $x
+
+# End machine code for function f.
+
+*** IR Dump After Analysis for ComputingKnownBits (gisel-known-bits) on f omitted because no change ***
+*** IR Dump After MachineDominator Tree Construction (machinedomtree) on f omitted because no change ***
+*** IR Dump After Analysis containing CSE Info (cseinfo) on f omitted because no change ***
+*** IR Dump After MOSCombiner (mos-combiner) on f omitted because no change ***
+*** IR Dump After Lower MOS Select pseudo-instruction (mos-lower-select) on f omitted because no change ***
+*** IR Dump After RegBankSelect (regbankselect) on f ***
+# Machine code for function f: IsSSA, TracksLiveness, Legalized, RegBankSelected
+Frame Objects:
+  fi#0: size=2, align=1, at location [SP]
+  fi#1: size=2, align=1, at location [SP]
+
+bb.1.entry:
+  successors: %bb.2, %bb.3
+  liveins: $a, $x
+  %1:any(s8) = COPY $a
+  %2:any(s8) = COPY $x
+  %38:any(s8) = G_CONSTANT i8 0
+  %37:any(s8) = G_CONSTANT i8 1
+  %3:any(p0) = G_FRAME_INDEX %stack.0.retval
+  %4:any(p0) = G_FRAME_INDEX %stack.1.x.addr
+  G_STORE_INDIR_IDX %1:any(s8), %4:any(p0), %38:any :: (store (s8) into %ir.x.addr)
+  G_STORE_INDIR_IDX %2:any(s8), %4:any(p0), %37:any :: (store (s8) into %ir.x.addr + 1)
+  %34:any(s8) = G_LOAD_INDIR_IDX %4:any(p0), %38:any :: (dereferenceable load (s8) from %ir.x.addr)
+  %36:any(s8) = G_LOAD_INDIR_IDX %4:any(p0), %37:any :: (dereferenceable load (s8) from %ir.x.addr + 1)
+  %7:any(s1) = G_CMPZ %34:any(s8), %36:any(s8)
+  G_BRCOND_IMM %7:any(s1), %bb.3, 1
+  G_BR %bb.2
+
+bb.2.if.then:
+; predecessors: %bb.1
+  successors: %bb.4(0x80000000); %bb.4(100.00%)
+
+  %25:any(s8) = G_CONSTANT i8 0
+  G_STORE_INDIR_IDX %37:any(s8), %3:any(p0), %25:any :: (store (s8) into %ir.retval)
+  %24:any(s8) = G_CONSTANT i8 1
+  G_STORE_INDIR_IDX %38:any(s8), %3:any(p0), %24:any :: (store (s8) into %ir.retval + 1)
+  G_BR %bb.4
+
+bb.3.if.end:
+; predecessors: %bb.1
+  successors: %bb.4(0x80000000); %bb.4(100.00%)
+
+  %31:any(s8) = G_CONSTANT i8 0
+  G_STORE_INDIR_IDX %38:any(s8), %3:any(p0), %31:any :: (store (s8) into %ir.retval)
+  %30:any(s8) = G_CONSTANT i8 1
+  G_STORE_INDIR_IDX %38:any(s8), %3:any(p0), %30:any :: (store (s8) into %ir.retval + 1)
+
+bb.4.return:
+; predecessors: %bb.3, %bb.2
+
+  %19:any(s8) = G_CONSTANT i8 0
+  %14:any(s8) = G_LOAD_INDIR_IDX %3:any(p0), %19:any :: (dereferenceable load (s8) from %ir.retval)
+  %18:any(s8) = G_CONSTANT i8 1
+  %17:any(s8) = G_LOAD_INDIR_IDX %3:any(p0), %18:any :: (dereferenceable load (s8) from %ir.retval + 1)
+  $a = COPY %14:any(s8)
+  $x = COPY %17:any(s8)
+  RTS implicit $a, implicit $x
+
+# End machine code for function f.
+
+*** IR Dump After Localizer (localizer) on f ***
+# Machine code for function f: IsSSA, TracksLiveness, Legalized, RegBankSelected
+Frame Objects:
+  fi#0: size=2, align=1, at location [SP]
+  fi#1: size=2, align=1, at location [SP]
+
+bb.1.entry:
+  successors: %bb.2, %bb.3
+  liveins: $a, $x
+  %1:any(s8) = COPY $a
+  %2:any(s8) = COPY $x
+  %3:any(p0) = G_FRAME_INDEX %stack.0.retval
+  %4:any(p0) = G_FRAME_INDEX %stack.1.x.addr
+  %38:any(s8) = G_CONSTANT i8 0
+  G_STORE_INDIR_IDX %1:any(s8), %4:any(p0), %38:any :: (store (s8) into %ir.x.addr)
+  %37:any(s8) = G_CONSTANT i8 1
+  G_STORE_INDIR_IDX %2:any(s8), %4:any(p0), %37:any :: (store (s8) into %ir.x.addr + 1)
+  %34:any(s8) = G_LOAD_INDIR_IDX %4:any(p0), %38:any :: (dereferenceable load (s8) from %ir.x.addr)
+  %36:any(s8) = G_LOAD_INDIR_IDX %4:any(p0), %37:any :: (dereferenceable load (s8) from %ir.x.addr + 1)
+  %7:any(s1) = G_CMPZ %34:any(s8), %36:any(s8)
+  G_BRCOND_IMM %7:any(s1), %bb.3, 1
+  G_BR %bb.2
+
+bb.2.if.then:
+; predecessors: %bb.1
+  successors: %bb.4(0x80000000); %bb.4(100.00%)
+
+  %25:any(s8) = G_CONSTANT i8 0
+  %43:any(p0) = G_FRAME_INDEX %stack.0.retval
+  %45:any(s8) = G_CONSTANT i8 1
+  G_STORE_INDIR_IDX %45:any(s8), %43:any(p0), %25:any :: (store (s8) into %ir.retval)
+  %24:any(s8) = G_CONSTANT i8 1
+  %47:any(s8) = G_CONSTANT i8 0
+  G_STORE_INDIR_IDX %47:any(s8), %43:any(p0), %24:any :: (store (s8) into %ir.retval + 1)
+  G_BR %bb.4
+
+bb.3.if.end:
+; predecessors: %bb.1
+  successors: %bb.4(0x80000000); %bb.4(100.00%)
+
+  %31:any(s8) = G_CONSTANT i8 0
+  %44:any(p0) = G_FRAME_INDEX %stack.0.retval
+  %46:any(s8) = G_CONSTANT i8 0
+  G_STORE_INDIR_IDX %46:any(s8), %44:any(p0), %31:any :: (store (s8) into %ir.retval)
+  %30:any(s8) = G_CONSTANT i8 1
+  G_STORE_INDIR_IDX %46:any(s8), %44:any(p0), %30:any :: (store (s8) into %ir.retval + 1)
+
+bb.4.return:
+; predecessors: %bb.3, %bb.2
+
+  %19:any(s8) = G_CONSTANT i8 0
+  %42:any(p0) = G_FRAME_INDEX %stack.0.retval
+  %14:any(s8) = G_LOAD_INDIR_IDX %42:any(p0), %19:any :: (dereferenceable load (s8) from %ir.retval)
+  %18:any(s8) = G_CONSTANT i8 1
+  %17:any(s8) = G_LOAD_INDIR_IDX %42:any(p0), %18:any :: (dereferenceable load (s8) from %ir.retval + 1)
+  $a = COPY %14:any(s8)
+  $x = COPY %17:any(s8)
+  RTS implicit $a, implicit $x
+
+# End machine code for function f.
+
+*** IR Dump After Analysis for ComputingKnownBits (gisel-known-bits) on f omitted because no change ***
+*** IR Dump After InstructionSelect (instruction-select) on f ***
+# Machine code for function f: IsSSA, TracksLiveness, Legalized, RegBankSelected, Selected
+Frame Objects:
+  fi#0: size=2, align=1, at location [SP]
+  fi#1: size=2, align=1, at location [SP]
+
+bb.1.entry:
+  successors: %bb.2, %bb.3
+  liveins: $a, $x
+  %1:ac = COPY $a
+  %2:ac = COPY $x
+  %66:anyi8, %67:cc, %68:vc = AddrLostk %stack.1.x.addr, 0
+  %69:anyi8, %70:cc, %71:vc = AddrHistk %stack.1.x.addr, 0, %67:cc
+  %4:imag16 = REG_SEQUENCE %66:anyi8, %subreg.sublo, %69:anyi8, %subreg.subhi
+  %38:yc = LDImm 0
+  STIndirIdx %1:ac, %4:imag16, %38:yc :: (store (s8) into %ir.x.addr)
+  %37:yc = LDImm 1
+  STIndirIdx %2:ac, %4:imag16, %37:yc :: (store (s8) into %ir.x.addr + 1)
+  %34:ac = LDIndirIdx %4:imag16, %38:yc :: (dereferenceable load (s8) from %ir.x.addr)
+  %36:ac = LDIndirIdx %4:imag16, %37:yc :: (dereferenceable load (s8) from %ir.x.addr + 1)
+  CmpBrZeroMultiByte %bb.3, 1, %34:ac, %36:ac, implicit-def $c
+  JMP %bb.2
+
+bb.2.if.then:
+; predecessors: %bb.1
+  successors: %bb.4(0x80000000); %bb.4(100.00%)
+
+  %25:yc = LDImm 0
+  %54:anyi8, %55:cc, %56:vc = AddrLostk %stack.0.retval, 0
+  %57:anyi8, %58:cc, %59:vc = AddrHistk %stack.0.retval, 0, %55:cc
+  %43:imag16 = REG_SEQUENCE %54:anyi8, %subreg.sublo, %57:anyi8, %subreg.subhi
+  %45:ac = LDImm 1
+  STIndirIdx %45:ac, %43:imag16, %25:yc :: (store (s8) into %ir.retval)
+  %24:yc = LDImm 1
+  %47:ac = LDImm 0
+  STIndirIdx %47:ac, %43:imag16, %24:yc :: (store (s8) into %ir.retval + 1)
+  JMP %bb.4
+
+bb.3.if.end:
+; predecessors: %bb.1
+  successors: %bb.4(0x80000000); %bb.4(100.00%)
+
+  %31:yc = LDImm 0
+  %60:anyi8, %61:cc, %62:vc = AddrLostk %stack.0.retval, 0
+  %63:anyi8, %64:cc, %65:vc = AddrHistk %stack.0.retval, 0, %61:cc
+  %44:imag16 = REG_SEQUENCE %60:anyi8, %subreg.sublo, %63:anyi8, %subreg.subhi
+  %46:ac = LDImm 0
+  STIndirIdx %46:ac, %44:imag16, %31:yc :: (store (s8) into %ir.retval)
+  %30:yc = LDImm 1
+  STIndirIdx %46:ac, %44:imag16, %30:yc :: (store (s8) into %ir.retval + 1)
+
+bb.4.return:
+; predecessors: %bb.3, %bb.2
+
+  %19:yc = LDImm 0
+  %48:anyi8, %49:cc, %50:vc = AddrLostk %stack.0.retval, 0
+  %51:anyi8, %52:cc, %53:vc = AddrHistk %stack.0.retval, 0, %49:cc
+  %42:imag16 = REG_SEQUENCE %48:anyi8, %subreg.sublo, %51:anyi8, %subreg.subhi
+  %14:ac = LDIndirIdx %42:imag16, %19:yc :: (dereferenceable load (s8) from %ir.retval)
+  %18:yc = LDImm 1
+  %17:ac = LDIndirIdx %42:imag16, %18:yc :: (dereferenceable load (s8) from %ir.retval + 1)
+  $a = COPY %14:ac
+  $x = COPY %17:ac
+  RTS implicit $a, implicit $x
+
+# End machine code for function f.
+
+*** IR Dump After ResetMachineFunction on f omitted because no change ***
+*** IR Dump After Finalize ISel and expand pseudo-instructions (finalize-isel) on f omitted because no change ***
+*** IR Dump After Lazy Machine Block Frequency Analysis (lazy-machine-block-freq) on f omitted because no change ***
+*** IR Dump After Early Tail Duplication (early-tailduplication) on f omitted because no change ***
+*** IR Dump After Optimize machine instruction PHIs (opt-phis) on f omitted because no change ***
+*** IR Dump After Slot index numbering (slotindexes) on f omitted because no change ***
+*** IR Dump After Merge disjoint stack slots (stack-coloring) on f omitted because no change ***
+*** IR Dump After Local Stack Slot Allocation (localstackalloc) on f omitted because no change ***
+*** IR Dump After Remove dead machine instructions (dead-mi-elimination) on f omitted because no change ***
+*** IR Dump After MachineDominator Tree Construction (machinedomtree) on f omitted because no change ***
+*** IR Dump After Machine Natural Loop Construction (machine-loops) on f omitted because no change ***
+*** IR Dump After Machine Block Frequency Analysis (machine-block-freq) on f omitted because no change ***
+*** IR Dump After Early Machine Loop Invariant Code Motion (early-machinelicm) on f omitted because no change ***
+*** IR Dump After MachineDominator Tree Construction (machinedomtree) on f omitted because no change ***
+*** IR Dump After Machine Block Frequency Analysis (machine-block-freq) on f omitted because no change ***
+*** IR Dump After Machine Common Subexpression Elimination (machine-cse) on f omitted because no change ***
+*** IR Dump After MachinePostDominator Tree Construction (machinepostdomtree) on f omitted because no change ***
+*** IR Dump After Machine Cycle Info Analysis (machine-cycles) on f omitted because no change ***
+*** IR Dump After Machine code sinking (machine-sink) on f omitted because no change ***
+*** IR Dump After Peephole Optimizations (peephole-opt) on f omitted because no change ***
+*** IR Dump After Remove dead machine instructions (dead-mi-elimination) on f omitted because no change ***
+*** IR Dump After MOS Copy Insertion (mos-insert-copies) on f omitted because no change ***
+*** IR Dump After Detect Dead Lanes (detect-dead-lanes) on f ***
+# Machine code for function f: IsSSA, TracksLiveness, Legalized, RegBankSelected, Selected
+Frame Objects:
+  fi#0: size=2, align=1, at location [SP]
+  fi#1: size=2, align=1, at location [SP]
+
+bb.1.entry:
+  successors: %bb.2, %bb.3
+  liveins: $a, $x
+  %1:ac = COPY $a
+  %2:ac = COPY $x
+  %66:anyi8, %67:cc, dead %68:vc = AddrLostk %stack.1.x.addr, 0
+  %69:anyi8, dead %70:cc, dead %71:vc = AddrHistk %stack.1.x.addr, 0, %67:cc
+  %4:imag16 = REG_SEQUENCE %66:anyi8, %subreg.sublo, %69:anyi8, %subreg.subhi
+  %38:yc = LDImm 0
+  STIndirIdx %1:ac, %4:imag16, %38:yc :: (store (s8) into %ir.x.addr)
+  %37:yc = LDImm 1
+  STIndirIdx %2:ac, %4:imag16, %37:yc :: (store (s8) into %ir.x.addr + 1)
+  %34:ac = LDIndirIdx %4:imag16, %38:yc :: (dereferenceable load (s8) from %ir.x.addr)
+  %36:ac = LDIndirIdx %4:imag16, %37:yc :: (dereferenceable load (s8) from %ir.x.addr + 1)
+  CmpBrZeroMultiByte %bb.3, 1, %34:ac, %36:ac, implicit-def $c
+  JMP %bb.2
+
+bb.2.if.then:
+; predecessors: %bb.1
+  successors: %bb.4(0x80000000); %bb.4(100.00%)
+
+  %25:yc = LDImm 0
+  %54:anyi8, %55:cc, dead %56:vc = AddrLostk %stack.0.retval, 0
+  %57:anyi8, dead %58:cc, dead %59:vc = AddrHistk %stack.0.retval, 0, %55:cc
+  %43:imag16 = REG_SEQUENCE %54:anyi8, %subreg.sublo, %57:anyi8, %subreg.subhi
+  %45:ac = LDImm 1
+  STIndirIdx %45:ac, %43:imag16, %25:yc :: (store (s8) into %ir.retval)
+  %24:yc = LDImm 1
+  %47:ac = LDImm 0
+  STIndirIdx %47:ac, %43:imag16, %24:yc :: (store (s8) into %ir.retval + 1)
+  JMP %bb.4
+
+bb.3.if.end:
+; predecessors: %bb.1
+  successors: %bb.4(0x80000000); %bb.4(100.00%)
+
+  %31:yc = LDImm 0
+  %60:anyi8, %61:cc, dead %62:vc = AddrLostk %stack.0.retval, 0
+  %63:anyi8, dead %64:cc, dead %65:vc = AddrHistk %stack.0.retval, 0, %61:cc
+  %44:imag16 = REG_SEQUENCE %60:anyi8, %subreg.sublo, %63:anyi8, %subreg.subhi
+  %46:ac = LDImm 0
+  STIndirIdx %46:ac, %44:imag16, %31:yc :: (store (s8) into %ir.retval)
+  %30:yc = LDImm 1
+  STIndirIdx %46:ac, %44:imag16, %30:yc :: (store (s8) into %ir.retval + 1)
+
+bb.4.return:
+; predecessors: %bb.3, %bb.2
+
+  %19:yc = LDImm 0
+  %48:anyi8, %49:cc, dead %50:vc = AddrLostk %stack.0.retval, 0
+  %51:anyi8, dead %52:cc, dead %53:vc = AddrHistk %stack.0.retval, 0, %49:cc
+  %42:imag16 = REG_SEQUENCE %48:anyi8, %subreg.sublo, %51:anyi8, %subreg.subhi
+  %14:ac = LDIndirIdx %42:imag16, %19:yc :: (dereferenceable load (s8) from %ir.retval)
+  %18:yc = LDImm 1
+  %17:ac = LDIndirIdx %42:imag16, %18:yc :: (dereferenceable load (s8) from %ir.retval + 1)
+  $a = COPY %14:ac
+  $x = COPY %17:ac
+  RTS implicit $a, implicit $x
+
+# End machine code for function f.
+
+*** IR Dump After Init Undef Pass (init-undef) on f omitted because no change ***
+*** IR Dump After Process Implicit Definitions (processimpdefs) on f omitted because no change ***
+*** IR Dump After Remove unreachable machine basic blocks (unreachable-mbb-elimination) on f ***
+# Machine code for function f: IsSSA, TracksLiveness, Legalized, RegBankSelected, Selected
+Frame Objects:
+  fi#0: size=2, align=1, at location [SP]
+  fi#1: size=2, align=1, at location [SP]
+
+bb.0.entry:
+  successors: %bb.1, %bb.2
+  liveins: $a, $x
+  %1:ac = COPY $a
+  %2:ac = COPY $x
+  %66:anyi8, %67:cc, dead %68:vc = AddrLostk %stack.1.x.addr, 0
+  %69:anyi8, dead %70:cc, dead %71:vc = AddrHistk %stack.1.x.addr, 0, %67:cc
+  %4:imag16 = REG_SEQUENCE %66:anyi8, %subreg.sublo, %69:anyi8, %subreg.subhi
+  %38:yc = LDImm 0
+  STIndirIdx %1:ac, %4:imag16, %38:yc :: (store (s8) into %ir.x.addr)
+  %37:yc = LDImm 1
+  STIndirIdx %2:ac, %4:imag16, %37:yc :: (store (s8) into %ir.x.addr + 1)
+  %34:ac = LDIndirIdx %4:imag16, %38:yc :: (dereferenceable load (s8) from %ir.x.addr)
+  %36:ac = LDIndirIdx %4:imag16, %37:yc :: (dereferenceable load (s8) from %ir.x.addr + 1)
+  CmpBrZeroMultiByte %bb.2, 1, %34:ac, %36:ac, implicit-def $c
+  JMP %bb.1
+
+bb.1.if.then:
+; predecessors: %bb.0
+  successors: %bb.3(0x80000000); %bb.3(100.00%)
+
+  %25:yc = LDImm 0
+  %54:anyi8, %55:cc, dead %56:vc = AddrLostk %stack.0.retval, 0
+  %57:anyi8, dead %58:cc, dead %59:vc = AddrHistk %stack.0.retval, 0, %55:cc
+  %43:imag16 = REG_SEQUENCE %54:anyi8, %subreg.sublo, %57:anyi8, %subreg.subhi
+  %45:ac = LDImm 1
+  STIndirIdx %45:ac, %43:imag16, %25:yc :: (store (s8) into %ir.retval)
+  %24:yc = LDImm 1
+  %47:ac = LDImm 0
+  STIndirIdx %47:ac, %43:imag16, %24:yc :: (store (s8) into %ir.retval + 1)
+  JMP %bb.3
+
+bb.2.if.end:
+; predecessors: %bb.0
+  successors: %bb.3(0x80000000); %bb.3(100.00%)
+
+  %31:yc = LDImm 0
+  %60:anyi8, %61:cc, dead %62:vc = AddrLostk %stack.0.retval, 0
+  %63:anyi8, dead %64:cc, dead %65:vc = AddrHistk %stack.0.retval, 0, %61:cc
+  %44:imag16 = REG_SEQUENCE %60:anyi8, %subreg.sublo, %63:anyi8, %subreg.subhi
+  %46:ac = LDImm 0
+  STIndirIdx %46:ac, %44:imag16, %31:yc :: (store (s8) into %ir.retval)
+  %30:yc = LDImm 1
+  STIndirIdx %46:ac, %44:imag16, %30:yc :: (store (s8) into %ir.retval + 1)
+
+bb.3.return:
+; predecessors: %bb.2, %bb.1
+
+  %19:yc = LDImm 0
+  %48:anyi8, %49:cc, dead %50:vc = AddrLostk %stack.0.retval, 0
+  %51:anyi8, dead %52:cc, dead %53:vc = AddrHistk %stack.0.retval, 0, %49:cc
+  %42:imag16 = REG_SEQUENCE %48:anyi8, %subreg.sublo, %51:anyi8, %subreg.subhi
+  %14:ac = LDIndirIdx %42:imag16, %19:yc :: (dereferenceable load (s8) from %ir.retval)
+  %18:yc = LDImm 1
+  %17:ac = LDIndirIdx %42:imag16, %18:yc :: (dereferenceable load (s8) from %ir.retval + 1)
+  $a = COPY %14:ac
+  $x = COPY %17:ac
+  RTS implicit $a, implicit $x
+
+# End machine code for function f.
+
+*** IR Dump After Live Variable Analysis (livevars) on f ***
+# Machine code for function f: IsSSA, TracksLiveness, Legalized, RegBankSelected, Selected
+Frame Objects:
+  fi#0: size=2, align=1, at location [SP]
+  fi#1: size=2, align=1, at location [SP]
+
+bb.0.entry:
+  successors: %bb.1, %bb.2
+  liveins: $a, $x
+  %1:ac = COPY killed $a
+  %2:ac = COPY killed $x
+  %66:anyi8, %67:cc, dead %68:vc = AddrLostk %stack.1.x.addr, 0
+  %69:anyi8, dead %70:cc, dead %71:vc = AddrHistk %stack.1.x.addr, 0, killed %67:cc
+  %4:imag16 = REG_SEQUENCE killed %66:anyi8, %subreg.sublo, killed %69:anyi8, %subreg.subhi
+  %38:yc = LDImm 0
+  STIndirIdx killed %1:ac, %4:imag16, %38:yc :: (store (s8) into %ir.x.addr)
+  %37:yc = LDImm 1
+  STIndirIdx killed %2:ac, %4:imag16, %37:yc :: (store (s8) into %ir.x.addr + 1)
+  %34:ac = LDIndirIdx %4:imag16, killed %38:yc :: (dereferenceable load (s8) from %ir.x.addr)
+  %36:ac = LDIndirIdx killed %4:imag16, killed %37:yc :: (dereferenceable load (s8) from %ir.x.addr + 1)
+  CmpBrZeroMultiByte %bb.2, 1, killed %34:ac, killed %36:ac, implicit-def dead $c
+  JMP %bb.1
+
+bb.1.if.then:
+; predecessors: %bb.0
+  successors: %bb.3(0x80000000); %bb.3(100.00%)
+
+  %25:yc = LDImm 0
+  %54:anyi8, %55:cc, dead %56:vc = AddrLostk %stack.0.retval, 0
+  %57:anyi8, dead %58:cc, dead %59:vc = AddrHistk %stack.0.retval, 0, killed %55:cc
+  %43:imag16 = REG_SEQUENCE killed %54:anyi8, %subreg.sublo, killed %57:anyi8, %subreg.subhi
+  %45:ac = LDImm 1
+  STIndirIdx killed %45:ac, %43:imag16, killed %25:yc :: (store (s8) into %ir.retval)
+  %24:yc = LDImm 1
+  %47:ac = LDImm 0
+  STIndirIdx killed %47:ac, killed %43:imag16, killed %24:yc :: (store (s8) into %ir.retval + 1)
+  JMP %bb.3
+
+bb.2.if.end:
+; predecessors: %bb.0
+  successors: %bb.3(0x80000000); %bb.3(100.00%)
+
+  %31:yc = LDImm 0
+  %60:anyi8, %61:cc, dead %62:vc = AddrLostk %stack.0.retval, 0
+  %63:anyi8, dead %64:cc, dead %65:vc = AddrHistk %stack.0.retval, 0, killed %61:cc
+  %44:imag16 = REG_SEQUENCE killed %60:anyi8, %subreg.sublo, killed %63:anyi8, %subreg.subhi
+  %46:ac = LDImm 0
+  STIndirIdx %46:ac, %44:imag16, killed %31:yc :: (store (s8) into %ir.retval)
+  %30:yc = LDImm 1
+  STIndirIdx killed %46:ac, killed %44:imag16, killed %30:yc :: (store (s8) into %ir.retval + 1)
+
+bb.3.return:
+; predecessors: %bb.2, %bb.1
+
+  %19:yc = LDImm 0
+  %48:anyi8, %49:cc, dead %50:vc = AddrLostk %stack.0.retval, 0
+  %51:anyi8, dead %52:cc, dead %53:vc = AddrHistk %stack.0.retval, 0, killed %49:cc
+  %42:imag16 = REG_SEQUENCE killed %48:anyi8, %subreg.sublo, killed %51:anyi8, %subreg.subhi
+  %14:ac = LDIndirIdx %42:imag16, killed %19:yc :: (dereferenceable load (s8) from %ir.retval)
+  %18:yc = LDImm 1
+  %17:ac = LDIndirIdx killed %42:imag16, killed %18:yc :: (dereferenceable load (s8) from %ir.retval + 1)
+  $a = COPY killed %14:ac
+  $x = COPY killed %17:ac
+  RTS implicit killed $a, implicit killed $x
+
+# End machine code for function f.
+
+*** IR Dump After MachineDominator Tree Construction (machinedomtree) on f omitted because no change ***
+*** IR Dump After Machine Natural Loop Construction (machine-loops) on f omitted because no change ***
+*** IR Dump After Eliminate PHI nodes for register allocation (phi-node-elimination) on f ***
+# Machine code for function f: NoPHIs, TracksLiveness, Legalized, RegBankSelected, Selected
+Frame Objects:
+  fi#0: size=2, align=1, at location [SP]
+  fi#1: size=2, align=1, at location [SP]
+
+bb.0.entry:
+  successors: %bb.1, %bb.2
+  liveins: $a, $x
+  %1:ac = COPY killed $a
+  %2:ac = COPY killed $x
+  %66:anyi8, %67:cc, dead %68:vc = AddrLostk %stack.1.x.addr, 0
+  %69:anyi8, dead %70:cc, dead %71:vc = AddrHistk %stack.1.x.addr, 0, killed %67:cc
+  %4:imag16 = REG_SEQUENCE killed %66:anyi8, %subreg.sublo, killed %69:anyi8, %subreg.subhi
+  %38:yc = LDImm 0
+  STIndirIdx killed %1:ac, %4:imag16, %38:yc :: (store (s8) into %ir.x.addr)
+  %37:yc = LDImm 1
+  STIndirIdx killed %2:ac, %4:imag16, %37:yc :: (store (s8) into %ir.x.addr + 1)
+  %34:ac = LDIndirIdx %4:imag16, killed %38:yc :: (dereferenceable load (s8) from %ir.x.addr)
+  %36:ac = LDIndirIdx killed %4:imag16, killed %37:yc :: (dereferenceable load (s8) from %ir.x.addr + 1)
+  CmpBrZeroMultiByte %bb.2, 1, killed %34:ac, killed %36:ac, implicit-def dead $c
+  JMP %bb.1
+
+bb.1.if.then:
+; predecessors: %bb.0
+  successors: %bb.3(0x80000000); %bb.3(100.00%)
+
+  %25:yc = LDImm 0
+  %54:anyi8, %55:cc, dead %56:vc = AddrLostk %stack.0.retval, 0
+  %57:anyi8, dead %58:cc, dead %59:vc = AddrHistk %stack.0.retval, 0, killed %55:cc
+  %43:imag16 = REG_SEQUENCE killed %54:anyi8, %subreg.sublo, killed %57:anyi8, %subreg.subhi
+  %45:ac = LDImm 1
+  STIndirIdx killed %45:ac, %43:imag16, killed %25:yc :: (store (s8) into %ir.retval)
+  %24:yc = LDImm 1
+  %47:ac = LDImm 0
+  STIndirIdx killed %47:ac, killed %43:imag16, killed %24:yc :: (store (s8) into %ir.retval + 1)
+  JMP %bb.3
+
+bb.2.if.end:
+; predecessors: %bb.0
+  successors: %bb.3(0x80000000); %bb.3(100.00%)
+
+  %31:yc = LDImm 0
+  %60:anyi8, %61:cc, dead %62:vc = AddrLostk %stack.0.retval, 0
+  %63:anyi8, dead %64:cc, dead %65:vc = AddrHistk %stack.0.retval, 0, killed %61:cc
+  %44:imag16 = REG_SEQUENCE killed %60:anyi8, %subreg.sublo, killed %63:anyi8, %subreg.subhi
+  %46:ac = LDImm 0
+  STIndirIdx %46:ac, %44:imag16, killed %31:yc :: (store (s8) into %ir.retval)
+  %30:yc = LDImm 1
+  STIndirIdx killed %46:ac, killed %44:imag16, killed %30:yc :: (store (s8) into %ir.retval + 1)
+
+bb.3.return:
+; predecessors: %bb.2, %bb.1
+
+  %19:yc = LDImm 0
+  %48:anyi8, %49:cc, dead %50:vc = AddrLostk %stack.0.retval, 0
+  %51:anyi8, dead %52:cc, dead %53:vc = AddrHistk %stack.0.retval, 0, killed %49:cc
+  %42:imag16 = REG_SEQUENCE killed %48:anyi8, %subreg.sublo, killed %51:anyi8, %subreg.subhi
+  %14:ac = LDIndirIdx %42:imag16, killed %19:yc :: (dereferenceable load (s8) from %ir.retval)
+  %18:yc = LDImm 1
+  %17:ac = LDIndirIdx killed %42:imag16, killed %18:yc :: (dereferenceable load (s8) from %ir.retval + 1)
+  $a = COPY killed %14:ac
+  $x = COPY killed %17:ac
+  RTS implicit killed $a, implicit killed $x
+
+# End machine code for function f.
+
+*** IR Dump After Two-Address instruction pass (twoaddressinstruction) on f ***
+# Machine code for function f: NoPHIs, TracksLiveness, Legalized, RegBankSelected, Selected, TiedOpsRewritten
+Frame Objects:
+  fi#0: size=2, align=1, at location [SP]
+  fi#1: size=2, align=1, at location [SP]
+
+bb.0.entry:
+  successors: %bb.1, %bb.2
+  liveins: $a, $x
+  %1:ac = COPY killed $a
+  %2:ac = COPY killed $x
+  %66:anyi8, %67:cc, dead %68:vc = AddrLostk %stack.1.x.addr, 0
+  %69:anyi8, dead %70:cc, dead %71:vc = AddrHistk %stack.1.x.addr, 0, killed %67:cc
+  undef %4.sublo:imag16 = COPY killed %66:anyi8
+  %4.subhi:imag16 = COPY killed %69:anyi8
+  %38:yc = LDImm 0
+  STIndirIdx killed %1:ac, %4:imag16, %38:yc :: (store (s8) into %ir.x.addr)
+  %37:yc = LDImm 1
+  STIndirIdx killed %2:ac, %4:imag16, %37:yc :: (store (s8) into %ir.x.addr + 1)
+  %34:ac = LDIndirIdx %4:imag16, killed %38:yc :: (dereferenceable load (s8) from %ir.x.addr)
+  %36:ac = LDIndirIdx killed %4:imag16, killed %37:yc :: (dereferenceable load (s8) from %ir.x.addr + 1)
+  CmpBrZeroMultiByte %bb.2, 1, killed %34:ac, killed %36:ac, implicit-def dead $c
+  JMP %bb.1
+
+bb.1.if.then:
+; predecessors: %bb.0
+  successors: %bb.3(0x80000000); %bb.3(100.00%)
+
+  %25:yc = LDImm 0
+  %54:anyi8, %55:cc, dead %56:vc = AddrLostk %stack.0.retval, 0
+  %57:anyi8, dead %58:cc, dead %59:vc = AddrHistk %stack.0.retval, 0, killed %55:cc
+  undef %43.sublo:imag16 = COPY killed %54:anyi8
+  %43.subhi:imag16 = COPY killed %57:anyi8
+  %45:ac = LDImm 1
+  STIndirIdx killed %45:ac, %43:imag16, killed %25:yc :: (store (s8) into %ir.retval)
+  %24:yc = LDImm 1
+  %47:ac = LDImm 0
+  STIndirIdx killed %47:ac, killed %43:imag16, killed %24:yc :: (store (s8) into %ir.retval + 1)
+  JMP %bb.3
+
+bb.2.if.end:
+; predecessors: %bb.0
+  successors: %bb.3(0x80000000); %bb.3(100.00%)
+
+  %31:yc = LDImm 0
+  %60:anyi8, %61:cc, dead %62:vc = AddrLostk %stack.0.retval, 0
+  %63:anyi8, dead %64:cc, dead %65:vc = AddrHistk %stack.0.retval, 0, killed %61:cc
+  undef %44.sublo:imag16 = COPY killed %60:anyi8
+  %44.subhi:imag16 = COPY killed %63:anyi8
+  %46:ac = LDImm 0
+  STIndirIdx %46:ac, %44:imag16, killed %31:yc :: (store (s8) into %ir.retval)
+  %30:yc = LDImm 1
+  STIndirIdx killed %46:ac, killed %44:imag16, killed %30:yc :: (store (s8) into %ir.retval + 1)
+
+bb.3.return:
+; predecessors: %bb.2, %bb.1
+
+  %19:yc = LDImm 0
+  %48:anyi8, %49:cc, dead %50:vc = AddrLostk %stack.0.retval, 0
+  %51:anyi8, dead %52:cc, dead %53:vc = AddrHistk %stack.0.retval, 0, killed %49:cc
+  undef %42.sublo:imag16 = COPY killed %48:anyi8
+  %42.subhi:imag16 = COPY killed %51:anyi8
+  %14:ac = LDIndirIdx %42:imag16, killed %19:yc :: (dereferenceable load (s8) from %ir.retval)
+  %18:yc = LDImm 1
+  %17:ac = LDIndirIdx killed %42:imag16, killed %18:yc :: (dereferenceable load (s8) from %ir.retval + 1)
+  $a = COPY killed %14:ac
+  $x = COPY killed %17:ac
+  RTS implicit killed $a, implicit killed $x
+
+# End machine code for function f.
+
+*** IR Dump After Slot index numbering (slotindexes) on f omitted because no change ***
+*** IR Dump After Live Interval Analysis (liveintervals) on f ***
+# Machine code for function f: NoPHIs, TracksLiveness, Legalized, RegBankSelected, Selected, TiedOpsRewritten
+Frame Objects:
+  fi#0: size=2, align=1, at location [SP]
+  fi#1: size=2, align=1, at location [SP]
+
+bb.0.entry:
+  successors: %bb.1, %bb.2
+  liveins: $a, $x
+  %1:ac = COPY $a
+  %2:ac = COPY $x
+  %66:anyi8, %67:cc, dead %68:vc = AddrLostk %stack.1.x.addr, 0
+  %69:anyi8, dead %70:cc, dead %71:vc = AddrHistk %stack.1.x.addr, 0, %67:cc
+  undef %4.sublo:imag16 = COPY %66:anyi8
+  %4.subhi:imag16 = COPY %69:anyi8
+  %38:yc = LDImm 0
+  STIndirIdx %1:ac, %4:imag16, %38:yc :: (store (s8) into %ir.x.addr)
+  %37:yc = LDImm 1
+  STIndirIdx %2:ac, %4:imag16, %37:yc :: (store (s8) into %ir.x.addr + 1)
+  %34:ac = LDIndirIdx %4:imag16, %38:yc :: (dereferenceable load (s8) from %ir.x.addr)
+  %36:ac = LDIndirIdx %4:imag16, %37:yc :: (dereferenceable load (s8) from %ir.x.addr + 1)
+  CmpBrZeroMultiByte %bb.2, 1, %34:ac, %36:ac, implicit-def dead $c
+  JMP %bb.1
+
+bb.1.if.then:
+; predecessors: %bb.0
+  successors: %bb.3(0x80000000); %bb.3(100.00%)
+
+  %25:yc = LDImm 0
+  %54:anyi8, %55:cc, dead %56:vc = AddrLostk %stack.0.retval, 0
+  %57:anyi8, dead %58:cc, dead %59:vc = AddrHistk %stack.0.retval, 0, %55:cc
+  undef %43.sublo:imag16 = COPY %54:anyi8
+  %43.subhi:imag16 = COPY %57:anyi8
+  %45:ac = LDImm 1
+  STIndirIdx %45:ac, %43:imag16, %25:yc :: (store (s8) into %ir.retval)
+  %24:yc = LDImm 1
+  %47:ac = LDImm 0
+  STIndirIdx %47:ac, %43:imag16, %24:yc :: (store (s8) into %ir.retval + 1)
+  JMP %bb.3
+
+bb.2.if.end:
+; predecessors: %bb.0
+  successors: %bb.3(0x80000000); %bb.3(100.00%)
+
+  %31:yc = LDImm 0
+  %60:anyi8, %61:cc, dead %62:vc = AddrLostk %stack.0.retval, 0
+  %63:anyi8, dead %64:cc, dead %65:vc = AddrHistk %stack.0.retval, 0, %61:cc
+  undef %44.sublo:imag16 = COPY %60:anyi8
+  %44.subhi:imag16 = COPY %63:anyi8
+  %46:ac = LDImm 0
+  STIndirIdx %46:ac, %44:imag16, %31:yc :: (store (s8) into %ir.retval)
+  %30:yc = LDImm 1
+  STIndirIdx %46:ac, %44:imag16, %30:yc :: (store (s8) into %ir.retval + 1)
+
+bb.3.return:
+; predecessors: %bb.2, %bb.1
+
+  %19:yc = LDImm 0
+  %48:anyi8, %49:cc, dead %50:vc = AddrLostk %stack.0.retval, 0
+  %51:anyi8, dead %52:cc, dead %53:vc = AddrHistk %stack.0.retval, 0, %49:cc
+  undef %42.sublo:imag16 = COPY %48:anyi8
+  %42.subhi:imag16 = COPY %51:anyi8
+  %14:ac = LDIndirIdx %42:imag16, %19:yc :: (dereferenceable load (s8) from %ir.retval)
+  %18:yc = LDImm 1
+  %17:ac = LDIndirIdx %42:imag16, %18:yc :: (dereferenceable load (s8) from %ir.retval + 1)
+  $a = COPY %14:ac
+  $x = COPY %17:ac
+  RTS implicit $a, implicit $x
+
+# End machine code for function f.
+
+*** IR Dump After Register Coalescer (register-coalescer) on f ***
+# Machine code for function f: NoPHIs, TracksLiveness, Legalized, RegBankSelected, Selected, TiedOpsRewritten
+Frame Objects:
+  fi#0: size=2, align=1, at location [SP]
+  fi#1: size=2, align=1, at location [SP]
+
+bb.0.entry:
+  successors: %bb.1, %bb.2
+  liveins: $a, $x
+  %1:ac = COPY $a
+  %2:ac = COPY $x
+  undef %4.sublo:imag16, %67:cc, dead %68:vc = AddrLostk %stack.1.x.addr, 0
+  %4.subhi:imag16, dead %70:cc, dead %71:vc = AddrHistk %stack.1.x.addr, 0, %67:cc
+  %38:yc = LDImm 0
+  STIndirIdx %1:ac, %4:imag16, %38:yc :: (store (s8) into %ir.x.addr)
+  %37:yc = LDImm 1
+  STIndirIdx %2:ac, %4:imag16, %37:yc :: (store (s8) into %ir.x.addr + 1)
+  %34:ac = LDIndirIdx %4:imag16, %38:yc :: (dereferenceable load (s8) from %ir.x.addr)
+  %36:ac = LDIndirIdx %4:imag16, %37:yc :: (dereferenceable load (s8) from %ir.x.addr + 1)
+  CmpBrZeroMultiByte %bb.2, 1, %34:ac, %36:ac, implicit-def dead $c
+  JMP %bb.1
+
+bb.1.if.then:
+; predecessors: %bb.0
+  successors: %bb.3(0x80000000); %bb.3(100.00%)
+
+  %25:yc = LDImm 0
+  undef %43.sublo:imag16, %55:cc, dead %56:vc = AddrLostk %stack.0.retval, 0
+  %43.subhi:imag16, dead %58:cc, dead %59:vc = AddrHistk %stack.0.retval, 0, %55:cc
+  %45:ac = LDImm 1
+  STIndirIdx %45:ac, %43:imag16, %25:yc :: (store (s8) into %ir.retval)
+  %24:yc = LDImm 1
+  %47:ac = LDImm 0
+  STIndirIdx %47:ac, %43:imag16, %24:yc :: (store (s8) into %ir.retval + 1)
+  JMP %bb.3
+
+bb.2.if.end:
+; predecessors: %bb.0
+  successors: %bb.3(0x80000000); %bb.3(100.00%)
+
+  %31:yc = LDImm 0
+  undef %44.sublo:imag16, %61:cc, dead %62:vc = AddrLostk %stack.0.retval, 0
+  %44.subhi:imag16, dead %64:cc, dead %65:vc = AddrHistk %stack.0.retval, 0, %61:cc
+  %46:ac = LDImm 0
+  STIndirIdx %46:ac, %44:imag16, %31:yc :: (store (s8) into %ir.retval)
+  %30:yc = LDImm 1
+  STIndirIdx %46:ac, %44:imag16, %30:yc :: (store (s8) into %ir.retval + 1)
+
+bb.3.return:
+; predecessors: %bb.2, %bb.1
+
+  %19:yc = LDImm 0
+  undef %42.sublo:imag16, %49:cc, dead %50:vc = AddrLostk %stack.0.retval, 0
+  %42.subhi:imag16, dead %52:cc, dead %53:vc = AddrHistk %stack.0.retval, 0, %49:cc
+  %14:ac = LDIndirIdx %42:imag16, %19:yc :: (dereferenceable load (s8) from %ir.retval)
+  %18:yc = LDImm 1
+  %17:ac = LDIndirIdx %42:imag16, %18:yc :: (dereferenceable load (s8) from %ir.retval + 1)
+  $a = COPY %14:ac
+  $x = COPY %17:ac
+  RTS implicit $a, implicit $x
+
+# End machine code for function f.
+
+*** IR Dump After Register Coalescer (register-coalescer) on f omitted because no change ***
+*** IR Dump After Rename Disconnected Subregister Components (rename-independent-subregs) on f omitted because no change ***
+*** IR Dump After Machine Instruction Scheduler (machine-scheduler) on f ***
+# Machine code for function f: NoPHIs, TracksLiveness, Legalized, RegBankSelected, Selected, TiedOpsRewritten
+Frame Objects:
+  fi#0: size=2, align=1, at location [SP]
+  fi#1: size=2, align=1, at location [SP]
+
+bb.0.entry:
+  successors: %bb.1, %bb.2
+  liveins: $a, $x
+  %1:ac = COPY $a
+  %2:ac = COPY $x
+  undef %4.sublo:imag16, %67:cc, dead %68:vc = AddrLostk %stack.1.x.addr, 0
+  %4.subhi:imag16, dead %70:cc, dead %71:vc = AddrHistk %stack.1.x.addr, 0, %67:cc
+  %38:yc = LDImm 0
+  STIndirIdx %1:ac, %4:imag16, %38:yc :: (store (s8) into %ir.x.addr)
+  %37:yc = LDImm 1
+  STIndirIdx %2:ac, %4:imag16, %37:yc :: (store (s8) into %ir.x.addr + 1)
+  %34:ac = LDIndirIdx %4:imag16, %38:yc :: (dereferenceable load (s8) from %ir.x.addr)
+  %36:ac = LDIndirIdx %4:imag16, %37:yc :: (dereferenceable load (s8) from %ir.x.addr + 1)
+  CmpBrZeroMultiByte %bb.2, 1, %34:ac, %36:ac, implicit-def dead $c
+  JMP %bb.1
+
+bb.1.if.then:
+; predecessors: %bb.0
+  successors: %bb.3(0x80000000); %bb.3(100.00%)
+
+  %25:yc = LDImm 0
+  undef %43.sublo:imag16, %55:cc, dead %56:vc = AddrLostk %stack.0.retval, 0
+  %43.subhi:imag16, dead %58:cc, dead %59:vc = AddrHistk %stack.0.retval, 0, %55:cc
+  %45:ac = LDImm 1
+  STIndirIdx %45:ac, %43:imag16, %25:yc :: (store (s8) into %ir.retval)
+  %24:yc = LDImm 1
+  %47:ac = LDImm 0
+  STIndirIdx %47:ac, %43:imag16, %24:yc :: (store (s8) into %ir.retval + 1)
+  JMP %bb.3
+
+bb.2.if.end:
+; predecessors: %bb.0
+  successors: %bb.3(0x80000000); %bb.3(100.00%)
+
+  %31:yc = LDImm 0
+  undef %44.sublo:imag16, %61:cc, dead %62:vc = AddrLostk %stack.0.retval, 0
+  %44.subhi:imag16, dead %64:cc, dead %65:vc = AddrHistk %stack.0.retval, 0, %61:cc
+  %46:ac = LDImm 0
+  STIndirIdx %46:ac, %44:imag16, %31:yc :: (store (s8) into %ir.retval)
+  %30:yc = LDImm 1
+  STIndirIdx %46:ac, %44:imag16, %30:yc :: (store (s8) into %ir.retval + 1)
+
+bb.3.return:
+; predecessors: %bb.2, %bb.1
+
+  %19:yc = LDImm 0
+  undef %42.sublo:imag16, %49:cc, dead %50:vc = AddrLostk %stack.0.retval, 0
+  %42.subhi:imag16, dead %52:cc, dead %53:vc = AddrHistk %stack.0.retval, 0, %49:cc
+  %14:ac = LDIndirIdx %42:imag16, %19:yc :: (dereferenceable load (s8) from %ir.retval)
+  %18:yc = LDImm 1
+  %17:ac = LDIndirIdx %42:imag16, %18:yc :: (dereferenceable load (s8) from %ir.retval + 1)
+  $x = COPY %17:ac
+  $a = COPY %14:ac
+  RTS implicit $a, implicit $x
+
+# End machine code for function f.
+
+*** IR Dump After Machine Block Frequency Analysis (machine-block-freq) on f omitted because no change ***
+*** IR Dump After Debug Variable Analysis (livedebugvars) on f ***
+# Machine code for function f: NoPHIs, TracksLiveness, Legalized, RegBankSelected, Selected, TiedOpsRewritten, TracksDebugUserValues
+Frame Objects:
+  fi#0: size=2, align=1, at location [SP]
+  fi#1: size=2, align=1, at location [SP]
+
+bb.0.entry:
+  successors: %bb.1, %bb.2
+  liveins: $a, $x
+  %1:ac = COPY $a
+  %2:ac = COPY $x
+  undef %4.sublo:imag16, %67:cc, dead %68:vc = AddrLostk %stack.1.x.addr, 0
+  %4.subhi:imag16, dead %70:cc, dead %71:vc = AddrHistk %stack.1.x.addr, 0, %67:cc
+  %38:yc = LDImm 0
+  STIndirIdx %1:ac, %4:imag16, %38:yc :: (store (s8) into %ir.x.addr)
+  %37:yc = LDImm 1
+  STIndirIdx %2:ac, %4:imag16, %37:yc :: (store (s8) into %ir.x.addr + 1)
+  %34:ac = LDIndirIdx %4:imag16, %38:yc :: (dereferenceable load (s8) from %ir.x.addr)
+  %36:ac = LDIndirIdx %4:imag16, %37:yc :: (dereferenceable load (s8) from %ir.x.addr + 1)
+  CmpBrZeroMultiByte %bb.2, 1, %34:ac, %36:ac, implicit-def dead $c
+  JMP %bb.1
+
+bb.1.if.then:
+; predecessors: %bb.0
+  successors: %bb.3(0x80000000); %bb.3(100.00%)
+
+  %25:yc = LDImm 0
+  undef %43.sublo:imag16, %55:cc, dead %56:vc = AddrLostk %stack.0.retval, 0
+  %43.subhi:imag16, dead %58:cc, dead %59:vc = AddrHistk %stack.0.retval, 0, %55:cc
+  %45:ac = LDImm 1
+  STIndirIdx %45:ac, %43:imag16, %25:yc :: (store (s8) into %ir.retval)
+  %24:yc = LDImm 1
+  %47:ac = LDImm 0
+  STIndirIdx %47:ac, %43:imag16, %24:yc :: (store (s8) into %ir.retval + 1)
+  JMP %bb.3
+
+bb.2.if.end:
+; predecessors: %bb.0
+  successors: %bb.3(0x80000000); %bb.3(100.00%)
+
+  %31:yc = LDImm 0
+  undef %44.sublo:imag16, %61:cc, dead %62:vc = AddrLostk %stack.0.retval, 0
+  %44.subhi:imag16, dead %64:cc, dead %65:vc = AddrHistk %stack.0.retval, 0, %61:cc
+  %46:ac = LDImm 0
+  STIndirIdx %46:ac, %44:imag16, %31:yc :: (store (s8) into %ir.retval)
+  %30:yc = LDImm 1
+  STIndirIdx %46:ac, %44:imag16, %30:yc :: (store (s8) into %ir.retval + 1)
+
+bb.3.return:
+; predecessors: %bb.2, %bb.1
+
+  %19:yc = LDImm 0
+  undef %42.sublo:imag16, %49:cc, dead %50:vc = AddrLostk %stack.0.retval, 0
+  %42.subhi:imag16, dead %52:cc, dead %53:vc = AddrHistk %stack.0.retval, 0, %49:cc
+  %14:ac = LDIndirIdx %42:imag16, %19:yc :: (dereferenceable load (s8) from %ir.retval)
+  %18:yc = LDImm 1
+  %17:ac = LDIndirIdx %42:imag16, %18:yc :: (dereferenceable load (s8) from %ir.retval + 1)
+  $x = COPY %17:ac
+  $a = COPY %14:ac
+  RTS implicit $a, implicit $x
+
+# End machine code for function f.
+
+*** IR Dump After Live Stack Slot Analysis (livestacks) on f omitted because no change ***
+*** IR Dump After Virtual Register Map (virtregmap) on f omitted because no change ***
+*** IR Dump After Live Register Matrix (liveregmatrix) on f omitted because no change ***
+*** IR Dump After Bundle Machine CFG Edges (edge-bundles) on f omitted because no change ***
+*** IR Dump After Spill Code Placement Analysis (spill-code-placement) on f omitted because no change ***
+*** IR Dump After Lazy Machine Block Frequency Analysis (lazy-machine-block-freq) on f omitted because no change ***
+*** IR Dump After Machine Optimization Remark Emitter (machine-opt-remark-emitter) on f omitted because no change ***
+*** IR Dump After Greedy Register Allocator (greedy) on f ***
+# Machine code for function f: NoPHIs, TracksLiveness, Legalized, RegBankSelected, Selected, TiedOpsRewritten, TracksDebugUserValues
+Frame Objects:
+  fi#0: size=2, align=1, at location [SP]
+  fi#1: size=2, align=1, at location [SP]
+
+bb.0.entry:
+  successors: %bb.1, %bb.2
+  liveins: $a, $x
+  %1:ac = COPY $a
+  %72:anyi8 = COPY $x
+  undef %4.sublo:imag16, %67:cc, dead %68:vc = AddrLostk %stack.1.x.addr, 0
+  %4.subhi:imag16, dead %70:cc, dead %71:vc = AddrHistk %stack.1.x.addr, 0, %67:cc
+  %77:yc = LDImm 0
+  STIndirIdx %1:ac, %4:imag16, %77:yc :: (store (s8) into %ir.x.addr)
+  %82:yc = LDImm 1
+  %73:ac = COPY %72:anyi8
+  STIndirIdx %73:ac, %4:imag16, %82:yc :: (store (s8) into %ir.x.addr + 1)
+  %80:yc = LDImm 0
+  %84:ac = LDIndirIdx %4:imag16, %80:yc :: (dereferenceable load (s8) from %ir.x.addr)
+  %83:anyi8 = COPY %84:ac
+  %87:yc = LDImm 1
+  %36:ac = LDIndirIdx %4:imag16, %87:yc :: (dereferenceable load (s8) from %ir.x.addr + 1)
+  CmpBrZeroMultiByte %bb.2, 1, %83:anyi8, %36:ac, implicit-def dead $c
+  JMP %bb.1
+
+bb.1.if.then:
+; predecessors: %bb.0
+  successors: %bb.3(0x80000000); %bb.3(100.00%)
+
+  %25:yc = LDImm 0
+  undef %43.sublo:imag16, %55:cc, dead %56:vc = AddrLostk %stack.0.retval, 0
+  %43.subhi:imag16, dead %58:cc, dead %59:vc = AddrHistk %stack.0.retval, 0, %55:cc
+  %45:ac = LDImm 1
+  STIndirIdx %45:ac, %43:imag16, %25:yc :: (store (s8) into %ir.retval)
+  %24:yc = LDImm 1
+  %47:ac = LDImm 0
+  STIndirIdx %47:ac, %43:imag16, %24:yc :: (store (s8) into %ir.retval + 1)
+  JMP %bb.3
+
+bb.2.if.end:
+; predecessors: %bb.0
+  successors: %bb.3(0x80000000); %bb.3(100.00%)
+
+  %31:yc = LDImm 0
+  undef %44.sublo:imag16, %61:cc, dead %62:vc = AddrLostk %stack.0.retval, 0
+  %44.subhi:imag16, dead %64:cc, dead %65:vc = AddrHistk %stack.0.retval, 0, %61:cc
+  %46:ac = LDImm 0
+  STIndirIdx %46:ac, %44:imag16, %31:yc :: (store (s8) into %ir.retval)
+  %30:yc = LDImm 1
+  STIndirIdx %46:ac, %44:imag16, %30:yc :: (store (s8) into %ir.retval + 1)
+
+bb.3.return:
+; predecessors: %bb.2, %bb.1
+
+  %19:yc = LDImm 0
+  undef %42.sublo:imag16, %49:cc, dead %50:vc = AddrLostk %stack.0.retval, 0
+  %42.subhi:imag16, dead %52:cc, dead %53:vc = AddrHistk %stack.0.retval, 0, %49:cc
+  %75:ac = LDIndirIdx %42:imag16, %19:yc :: (dereferenceable load (s8) from %ir.retval)
+  %74:anyi8 = COPY %75:ac
+  %18:yc = LDImm 1
+  %17:ac = LDIndirIdx %42:imag16, %18:yc :: (dereferenceable load (s8) from %ir.retval + 1)
+  $x = COPY %17:ac
+  $a = COPY %74:anyi8
+  RTS implicit $a, implicit $x
+
+# End machine code for function f.
+
+*** IR Dump After Virtual Register Rewriter (virtregrewriter) on f ***
+# Machine code for function f: NoPHIs, TracksLiveness, NoVRegs, Legalized, RegBankSelected, Selected, TiedOpsRewritten, TracksDebugUserValues
+Frame Objects:
+  fi#0: size=2, align=1, at location [SP]
+  fi#1: size=2, align=1, at location [SP]
+
+bb.0.entry:
+  successors: %bb.1, %bb.2
+  liveins: $a, $x
+  renamable $rc2, renamable $c, dead renamable $v = AddrLostk %stack.1.x.addr, 0
+  renamable $rc3, dead renamable $c, dead renamable $v = AddrHistk %stack.1.x.addr, 0, killed renamable $c
+  renamable $y = LDImm 0
+  STIndirIdx killed renamable $a, renamable $rs1, killed renamable $y :: (store (s8) into %ir.x.addr)
+  renamable $y = LDImm 1
+  renamable $a = COPY killed renamable $x
+  STIndirIdx killed renamable $a, renamable $rs1, killed renamable $y :: (store (s8) into %ir.x.addr + 1)
+  renamable $y = LDImm 0
+  renamable $a = LDIndirIdx renamable $rs1, killed renamable $y :: (dereferenceable load (s8) from %ir.x.addr)
+  renamable $rc4 = COPY killed renamable $a
+  renamable $y = LDImm 1
+  renamable $a = LDIndirIdx killed renamable $rs1, killed renamable $y :: (dereferenceable load (s8) from %ir.x.addr + 1)
+  CmpBrZeroMultiByte %bb.2, 1, killed renamable $rc4, killed renamable $a, implicit-def dead $c
+  JMP %bb.1
+
+bb.1.if.then:
+; predecessors: %bb.0
+  successors: %bb.3(0x80000000); %bb.3(100.00%)
+
+  renamable $y = LDImm 0
+  renamable $rc2, renamable $c, dead renamable $v = AddrLostk %stack.0.retval, 0
+  renamable $rc3, dead renamable $c, dead renamable $v = AddrHistk %stack.0.retval, 0, killed renamable $c
+  renamable $a = LDImm 1
+  STIndirIdx killed renamable $a, renamable $rs1, killed renamable $y :: (store (s8) into %ir.retval)
+  renamable $y = LDImm 1
+  renamable $a = LDImm 0
+  STIndirIdx killed renamable $a, killed renamable $rs1, killed renamable $y :: (store (s8) into %ir.retval + 1)
+  JMP %bb.3
+
+bb.2.if.end:
+; predecessors: %bb.0
+  successors: %bb.3(0x80000000); %bb.3(100.00%)
+
+  renamable $y = LDImm 0
+  renamable $rc2, renamable $c, dead renamable $v = AddrLostk %stack.0.retval, 0
+  renamable $rc3, dead renamable $c, dead renamable $v = AddrHistk %stack.0.retval, 0, killed renamable $c
+  renamable $a = LDImm 0
+  STIndirIdx renamable $a, renamable $rs1, killed renamable $y :: (store (s8) into %ir.retval)
+  renamable $y = LDImm 1
+  STIndirIdx killed renamable $a, killed renamable $rs1, killed renamable $y :: (store (s8) into %ir.retval + 1)
+
+bb.3.return:
+; predecessors: %bb.2, %bb.1
+
+  renamable $y = LDImm 0
+  renamable $rc2, renamable $c, dead renamable $v = AddrLostk %stack.0.retval, 0
+  renamable $rc3, dead renamable $c, dead renamable $v = AddrHistk %stack.0.retval, 0, killed renamable $c
+  renamable $a = LDIndirIdx renamable $rs1, killed renamable $y :: (dereferenceable load (s8) from %ir.retval)
+  renamable $rc4 = COPY killed renamable $a
+  renamable $y = LDImm 1
+  renamable $a = LDIndirIdx killed renamable $rs1, killed renamable $y :: (dereferenceable load (s8) from %ir.retval + 1)
+  $x = COPY killed renamable $a
+  $a = COPY killed renamable $rc4
+  RTS implicit $a, implicit $x
+
+# End machine code for function f.
+
+*** IR Dump After Register Allocation Pass Scoring (regallocscoringpass) on f omitted because no change ***
+*** IR Dump After Stack Slot Coloring (stack-slot-coloring) on f omitted because no change ***
+*** IR Dump After Machine Copy Propagation Pass (machine-cp) on f omitted because no change ***
+*** IR Dump After Machine Loop Invariant Code Motion (machinelicm) on f omitted because no change ***
+*** IR Dump After Remove Redundant DEBUG_VALUE analysis (removeredundantdebugvalues) on f omitted because no change ***
+*** IR Dump After Fixup Statepoint Caller Saved (fixup-statepoint-caller-saved) on f omitted because no change ***
+*** IR Dump After PostRA Machine Sink (postra-machine-sink) on f omitted because no change ***
+*** IR Dump After Machine Block Frequency Analysis (machine-block-freq) on f omitted because no change ***
+*** IR Dump After MachineDominator Tree Construction (machinedomtree) on f omitted because no change ***
+*** IR Dump After MachinePostDominator Tree Construction (machinepostdomtree) on f omitted because no change ***
+*** IR Dump After Lazy Machine Block Frequency Analysis (lazy-machine-block-freq) on f omitted because no change ***
+*** IR Dump After Machine Optimization Remark Emitter (machine-opt-remark-emitter) on f omitted because no change ***
+*** IR Dump After Shrink Wrapping analysis (shrink-wrap) on f omitted because no change ***
+*** IR Dump After Lazy Machine Block Frequency Analysis (lazy-machine-block-freq) on f omitted because no change ***
+*** IR Dump After Machine Optimization Remark Emitter (machine-opt-remark-emitter) on f omitted because no change ***
+*** IR Dump After Prologue/Epilogue Insertion & Frame Finalization (prologepilog) on f ***
+# Machine code for function f: NoPHIs, TracksLiveness, NoVRegs, Legalized, RegBankSelected, Selected, TiedOpsRewritten, TracksDebugUserValues
+Frame Objects:
+  fi#0: size=2, align=1, at location [SP-2]
+  fi#1: size=2, align=1, at location [SP-4]
+
+bb.0.entry:
+  successors: %bb.1, %bb.2
+  liveins: $a, $x
+  PH $a
+  $c = LDCImm 0
+  $a = COPY $rc0
+  $a, $c, $v = ADCImm $a(tied-def 0), 252, $c(tied-def 1)
+  $rc0 = COPY killed $a
+  $a = COPY $rc1
+  $a, $c, $v = ADCImm $a(tied-def 0), 255, $c(tied-def 1)
+  $rc1 = COPY killed $a
+  $a = PL
+  renamable $c = LDCImm 0
+  renamable $rc2 = COPY $rc0
+  renamable $rc3 = COPY $rc1
+  renamable $y = LDImm 0
+  STIndirIdx killed renamable $a, renamable $rs1, killed renamable $y :: (store (s8) into %ir.x.addr)
+  renamable $y = LDImm 1
+  renamable $a = COPY killed renamable $x
+  STIndirIdx killed renamable $a, renamable $rs1, killed renamable $y :: (store (s8) into %ir.x.addr + 1)
+  renamable $y = LDImm 0
+  renamable $a = LDIndirIdx renamable $rs1, killed renamable $y :: (dereferenceable load (s8) from %ir.x.addr)
+  renamable $rc4 = COPY killed renamable $a
+  renamable $y = LDImm 1
+  renamable $a = LDIndirIdx killed renamable $rs1, killed renamable $y :: (dereferenceable load (s8) from %ir.x.addr + 1)
+  CmpBrZeroMultiByte %bb.2, 1, killed renamable $rc4, killed renamable $a, implicit-def dead $c
+  JMP %bb.1
+
+bb.1.if.then:
+; predecessors: %bb.0
+  successors: %bb.3(0x80000000); %bb.3(100.00%)
+
+  renamable $y = LDImm 0
+  renamable $c = LDCImm 0
+  $a = COPY $rc0
+  $a, renamable $c, dead renamable $v = ADCImm $a(tied-def 0), 2, $c(tied-def 1)
+  renamable $rc2 = COPY killed $a
+  $a = COPY $rc1
+  $a, dead renamable $c, dead renamable $v = ADCImm $a(tied-def 0), 0, killed renamable $c(tied-def 1)
+  renamable $rc3 = COPY killed $a
+  renamable $a = LDImm 1
+  STIndirIdx killed renamable $a, renamable $rs1, killed renamable $y :: (store (s8) into %ir.retval)
+  renamable $y = LDImm 1
+  renamable $a = LDImm 0
+  STIndirIdx killed renamable $a, killed renamable $rs1, killed renamable $y :: (store (s8) into %ir.retval + 1)
+  JMP %bb.3
+
+bb.2.if.end:
+; predecessors: %bb.0
+  successors: %bb.3(0x80000000); %bb.3(100.00%)
+
+  renamable $y = LDImm 0
+  renamable $c = LDCImm 0
+  $a = COPY $rc0
+  $a, renamable $c, dead renamable $v = ADCImm $a(tied-def 0), 2, $c(tied-def 1)
+  renamable $rc2 = COPY killed $a
+  $a = COPY $rc1
+  $a, dead renamable $c, dead renamable $v = ADCImm $a(tied-def 0), 0, killed renamable $c(tied-def 1)
+  renamable $rc3 = COPY killed $a
+  renamable $a = LDImm 0
+  STIndirIdx renamable $a, renamable $rs1, killed renamable $y :: (store (s8) into %ir.retval)
+  renamable $y = LDImm 1
+  STIndirIdx killed renamable $a, killed renamable $rs1, killed renamable $y :: (store (s8) into %ir.retval + 1)
+
+bb.3.return:
+; predecessors: %bb.2, %bb.1
+
+  renamable $y = LDImm 0
+  renamable $c = LDCImm 0
+  $a = COPY $rc0
+  $a, renamable $c, dead renamable $v = ADCImm $a(tied-def 0), 2, $c(tied-def 1)
+  renamable $rc2 = COPY killed $a
+  $a = COPY $rc1
+  $a, dead renamable $c, dead renamable $v = ADCImm $a(tied-def 0), 0, killed renamable $c(tied-def 1)
+  renamable $rc3 = COPY killed $a
+  renamable $a = LDIndirIdx renamable $rs1, killed renamable $y :: (dereferenceable load (s8) from %ir.retval)
+  renamable $rc4 = COPY killed renamable $a
+  renamable $y = LDImm 1
+  renamable $a = LDIndirIdx killed renamable $rs1, killed renamable $y :: (dereferenceable load (s8) from %ir.retval + 1)
+  $x = COPY killed renamable $a
+  $a = COPY killed renamable $rc4
+  PH $a
+  $c = LDCImm 0
+  $a = COPY $rc0
+  $a, $c, $v = ADCImm $a(tied-def 0), 4, $c(tied-def 1)
+  $rc0 = COPY killed $a
+  $a = COPY $rc1
+  $a, $c, $v = ADCImm $a(tied-def 0), 0, $c(tied-def 1)
+  $rc1 = COPY killed $a
+  $a = PL
+  RTS implicit $a, implicit $x
+
+# End machine code for function f.
+
+*** IR Dump After Machine Late Instructions Cleanup Pass (machine-latecleanup) on f omitted because no change ***
+*** IR Dump After MachineDominator Tree Construction (machinedomtree) on f omitted because no change ***
+*** IR Dump After Machine Natural Loop Construction (machine-loops) on f omitted because no change ***
+*** IR Dump After Machine Block Frequency Analysis (machine-block-freq) on f omitted because no change ***
+*** IR Dump After Control Flow Optimizer (branch-folder) on f omitted because no change ***
+*** IR Dump After Lazy Machine Block Frequency Analysis (lazy-machine-block-freq) on f omitted because no change ***
+*** IR Dump After Tail Duplication (tailduplication) on f omitted because no change ***
+*** IR Dump After Machine Copy Propagation Pass (machine-cp) on f omitted because no change ***
+*** IR Dump After Optimize copies for MOS (mos-copy-opt) on f ***
+# Machine code for function f: NoPHIs, TracksLiveness, NoVRegs, Legalized, RegBankSelected, Selected, TiedOpsRewritten, TracksDebugUserValues
+Frame Objects:
+  fi#0: size=2, align=1, at location [SP-2]
+  fi#1: size=2, align=1, at location [SP-4]
+
+bb.0.entry:
+  successors: %bb.1, %bb.2
+  liveins: $a, $x
+  PH killed $a
+  $c = LDCImm 0
+  $a = COPY $rc0
+  $a, $c, dead $v = ADCImm killed $a(tied-def 0), 252, killed $c(tied-def 1)
+  $rc0 = COPY killed $a
+  $a = COPY $rc1
+  $a, dead $c, dead $v = ADCImm killed $a(tied-def 0), 255, killed $c(tied-def 1)
+  $rc1 = COPY killed $a
+  $a = PL
+  dead renamable $c = LDCImm 0
+  renamable $rc2 = COPY $rc0
+  renamable $rc3 = COPY $rc1
+  renamable $y = LDImm 0
+  STIndirIdx killed renamable $a, renamable $rs1, killed renamable $y :: (store (s8) into %ir.x.addr)
+  renamable $y = LDImm 1
+  renamable $a = COPY killed renamable $x
+  STIndirIdx killed renamable $a, renamable $rs1, killed renamable $y :: (store (s8) into %ir.x.addr + 1)
+  renamable $y = LDImm 0
+  renamable $a = LDIndirIdx renamable $rs1, killed renamable $y :: (dereferenceable load (s8) from %ir.x.addr)
+  renamable $rc4 = COPY killed renamable $a
+  renamable $y = LDImm 1
+  renamable $a = LDIndirIdx killed renamable $rs1, killed renamable $y :: (dereferenceable load (s8) from %ir.x.addr + 1)
+  CmpBrZeroMultiByte %bb.2, 1, killed renamable $rc4, killed renamable $a, implicit-def dead $c
+  JMP %bb.1
+
+bb.1.if.then:
+; predecessors: %bb.0
+  successors: %bb.3(0x80000000); %bb.3(100.00%)
+
+  renamable $y = LDImm 0
+  renamable $c = LDCImm 0
+  $a = COPY $rc0
+  $a, renamable $c, dead renamable $v = ADCImm killed $a(tied-def 0), 2, killed $c(tied-def 1)
+  renamable $rc2 = COPY killed $a
+  $a = COPY $rc1
+  $a, dead renamable $c, dead renamable $v = ADCImm killed $a(tied-def 0), 0, killed renamable $c(tied-def 1)
+  renamable $rc3 = COPY killed $a
+  renamable $a = LDImm 1
+  STIndirIdx killed renamable $a, renamable $rs1, killed renamable $y :: (store (s8) into %ir.retval)
+  renamable $y = LDImm 1
+  renamable $a = LDImm 0
+  STIndirIdx killed renamable $a, killed renamable $rs1, killed renamable $y :: (store (s8) into %ir.retval + 1)
+  JMP %bb.3
+
+bb.2.if.end:
+; predecessors: %bb.0
+  successors: %bb.3(0x80000000); %bb.3(100.00%)
+
+  renamable $y = LDImm 0
+  renamable $c = LDCImm 0
+  $a = COPY $rc0
+  $a, renamable $c, dead renamable $v = ADCImm killed $a(tied-def 0), 2, killed $c(tied-def 1)
+  renamable $rc2 = COPY killed $a
+  $a = COPY $rc1
+  $a, dead renamable $c, dead renamable $v = ADCImm killed $a(tied-def 0), 0, killed renamable $c(tied-def 1)
+  renamable $rc3 = COPY killed $a
+  renamable $a = LDImm 0
+  STIndirIdx renamable $a, renamable $rs1, killed renamable $y :: (store (s8) into %ir.retval)
+  renamable $y = LDImm 1
+  STIndirIdx killed renamable $a, killed renamable $rs1, killed renamable $y :: (store (s8) into %ir.retval + 1)
+
+bb.3.return:
+; predecessors: %bb.2, %bb.1
+
+  renamable $y = LDImm 0
+  renamable $c = LDCImm 0
+  $a = COPY $rc0
+  $a, renamable $c, dead renamable $v = ADCImm killed $a(tied-def 0), 2, killed $c(tied-def 1)
+  renamable $rc2 = COPY killed $a
+  $a = COPY $rc1
+  $a, dead renamable $c, dead renamable $v = ADCImm killed $a(tied-def 0), 0, killed renamable $c(tied-def 1)
+  renamable $rc3 = COPY killed $a
+  renamable $a = LDIndirIdx renamable $rs1, killed renamable $y :: (dereferenceable load (s8) from %ir.retval)
+  renamable $rc4 = COPY killed renamable $a
+  renamable $y = LDImm 1
+  renamable $a = LDIndirIdx killed renamable $rs1, killed renamable $y :: (dereferenceable load (s8) from %ir.retval + 1)
+  $x = COPY killed renamable $a
+  $a = COPY killed renamable $rc4
+  PH killed $a
+  $c = LDCImm 0
+  $a = COPY $rc0
+  $a, $c, dead $v = ADCImm killed $a(tied-def 0), 4, killed $c(tied-def 1)
+  $rc0 = COPY killed $a
+  $a = COPY $rc1
+  $a, dead $c, dead $v = ADCImm killed $a(tied-def 0), 0, killed $c(tied-def 1)
+  $rc1 = COPY killed $a
+  $a = PL
+  RTS implicit killed $a, implicit killed $x
+
+# End machine code for function f.
+
+*** IR Dump After Post-RA pseudo instruction expansion pass (postrapseudos) on f ***
+# Machine code for function f: NoPHIs, TracksLiveness, Legalized, RegBankSelected, Selected, TiedOpsRewritten, TracksDebugUserValues
+Frame Objects:
+  fi#0: size=2, align=1, at location [SP-2]
+  fi#1: size=2, align=1, at location [SP-4]
+
+bb.0.entry:
+  successors: %bb.1, %bb.2
+  liveins: $a, $x
+  PH killed $a
+  $c = LDCImm 0
+  $a = LDImag8 $rc0
+  $a, $c, dead $v = ADCImm killed $a(tied-def 0), 252, killed $c(tied-def 1)
+  $rc0 = STImag8 $a
+  $a = LDImag8 $rc1
+  $a, dead $c, dead $v = ADCImm killed $a(tied-def 0), 255, killed $c(tied-def 1)
+  $rc1 = STImag8 $a
+  $a = PL
+  dead renamable $c = LDCImm 0
+  %0:gpr = LDImag8 $rc0
+  $rc2 = STImag8 %0:gpr
+  %1:gpr = LDImag8 $rc1
+  $rc3 = STImag8 %1:gpr
+  renamable $y = LDImm 0
+  STIndirIdx killed renamable $a, renamable $rs1, killed renamable $y :: (store (s8) into %ir.x.addr)
+  renamable $y = LDImm 1
+  $a = T_A $x
+  STIndirIdx killed renamable $a, renamable $rs1, killed renamable $y :: (store (s8) into %ir.x.addr + 1)
+  renamable $y = LDImm 0
+  renamable $a = LDIndirIdx renamable $rs1, killed renamable $y :: (dereferenceable load (s8) from %ir.x.addr)
+  $rc4 = STImag8 $a
+  renamable $y = LDImm 1
+  renamable $a = LDIndirIdx killed renamable $rs1, killed renamable $y :: (dereferenceable load (s8) from %ir.x.addr + 1)
+  CmpBrZeroMultiByte %bb.2, 1, killed renamable $rc4, killed renamable $a, implicit-def dead $c
+  JMP %bb.1
+
+bb.1.if.then:
+; predecessors: %bb.0
+  successors: %bb.3(0x80000000); %bb.3(100.00%)
+
+  renamable $y = LDImm 0
+  renamable $c = LDCImm 0
+  $a = LDImag8 $rc0
+  $a, renamable $c, dead renamable $v = ADCImm killed $a(tied-def 0), 2, killed $c(tied-def 1)
+  $rc2 = STImag8 $a
+  $a = LDImag8 $rc1
+  $a, dead renamable $c, dead renamable $v = ADCImm killed $a(tied-def 0), 0, killed renamable $c(tied-def 1)
+  $rc3 = STImag8 $a
+  renamable $a = LDImm 1
+  STIndirIdx killed renamable $a, renamable $rs1, killed renamable $y :: (store (s8) into %ir.retval)
+  renamable $y = LDImm 1
+  renamable $a = LDImm 0
+  STIndirIdx killed renamable $a, killed renamable $rs1, killed renamable $y :: (store (s8) into %ir.retval + 1)
+  JMP %bb.3
+
+bb.2.if.end:
+; predecessors: %bb.0
+  successors: %bb.3(0x80000000); %bb.3(100.00%)
+
+  renamable $y = LDImm 0
+  renamable $c = LDCImm 0
+  $a = LDImag8 $rc0
+  $a, renamable $c, dead renamable $v = ADCImm killed $a(tied-def 0), 2, killed $c(tied-def 1)
+  $rc2 = STImag8 $a
+  $a = LDImag8 $rc1
+  $a, dead renamable $c, dead renamable $v = ADCImm killed $a(tied-def 0), 0, killed renamable $c(tied-def 1)
+  $rc3 = STImag8 $a
+  renamable $a = LDImm 0
+  STIndirIdx renamable $a, renamable $rs1, killed renamable $y :: (store (s8) into %ir.retval)
+  renamable $y = LDImm 1
+  STIndirIdx killed renamable $a, killed renamable $rs1, killed renamable $y :: (store (s8) into %ir.retval + 1)
+
+bb.3.return:
+; predecessors: %bb.2, %bb.1
+
+  renamable $y = LDImm 0
+  renamable $c = LDCImm 0
+  $a = LDImag8 $rc0
+  $a, renamable $c, dead renamable $v = ADCImm killed $a(tied-def 0), 2, killed $c(tied-def 1)
+  $rc2 = STImag8 $a
+  $a = LDImag8 $rc1
+  $a, dead renamable $c, dead renamable $v = ADCImm killed $a(tied-def 0), 0, killed renamable $c(tied-def 1)
+  $rc3 = STImag8 $a
+  renamable $a = LDIndirIdx renamable $rs1, killed renamable $y :: (dereferenceable load (s8) from %ir.retval)
+  $rc4 = STImag8 $a
+  renamable $y = LDImm 1
+  renamable $a = LDIndirIdx killed renamable $rs1, killed renamable $y :: (dereferenceable load (s8) from %ir.retval + 1)
+  $x = TA $a
+  $a = LDImag8 $rc4
+  PH killed $a
+  $c = LDCImm 0
+  $a = LDImag8 $rc0
+  $a, $c, dead $v = ADCImm killed $a(tied-def 0), 4, killed $c(tied-def 1)
+  $rc0 = STImag8 $a
+  $a = LDImag8 $rc1
+  $a, dead $c, dead $v = ADCImm killed $a(tied-def 0), 0, killed $c(tied-def 1)
+  $rc1 = STImag8 $a
+  $a = PL
+  RTS implicit killed $a, implicit killed $x
+
+# End machine code for function f.
+
+*** IR Dump After Scavenge virtual registers emitted by post-RA pseudos (mos-scavenging) on f ***
+# Machine code for function f: NoPHIs, TracksLiveness, NoVRegs, Legalized, RegBankSelected, Selected, TiedOpsRewritten, TracksDebugUserValues
+Frame Objects:
+  fi#0: size=2, align=1, at location [SP-2]
+  fi#1: size=2, align=1, at location [SP-4]
+
+bb.0.entry:
+  successors: %bb.1, %bb.2
+  liveins: $a, $x
+  PH killed $a
+  $c = LDCImm 0
+  $a = LDImag8 $rc0
+  $a, $c, dead $v = ADCImm killed $a(tied-def 0), 252, killed $c(tied-def 1)
+  $rc0 = STImag8 $a
+  $a = LDImag8 $rc1
+  $a, dead $c, dead $v = ADCImm killed $a(tied-def 0), 255, killed $c(tied-def 1)
+  $rc1 = STImag8 $a
+  $a = PL
+  dead renamable $c = LDCImm 0
+  $y = LDImag8 $rc0
+  $rc2 = STImag8 killed $y
+  $y = LDImag8 $rc1
+  $rc3 = STImag8 killed $y
+  renamable $y = LDImm 0
+  STIndirIdx killed renamable $a, renamable $rs1, killed renamable $y :: (store (s8) into %ir.x.addr)
+  renamable $y = LDImm 1
+  $a = T_A $x
+  STIndirIdx killed renamable $a, renamable $rs1, killed renamable $y :: (store (s8) into %ir.x.addr + 1)
+  renamable $y = LDImm 0
+  renamable $a = LDIndirIdx renamable $rs1, killed renamable $y :: (dereferenceable load (s8) from %ir.x.addr)
+  $rc4 = STImag8 $a
+  renamable $y = LDImm 1
+  renamable $a = LDIndirIdx killed renamable $rs1, killed renamable $y :: (dereferenceable load (s8) from %ir.x.addr + 1)
+  CmpBrZeroMultiByte %bb.2, 1, killed renamable $rc4, killed renamable $a, implicit-def dead $c
+  JMP %bb.1
+
+bb.1.if.then:
+; predecessors: %bb.0
+  successors: %bb.3(0x80000000); %bb.3(100.00%)
+
+  renamable $y = LDImm 0
+  renamable $c = LDCImm 0
+  $a = LDImag8 $rc0
+  $a, renamable $c, dead renamable $v = ADCImm killed $a(tied-def 0), 2, killed $c(tied-def 1)
+  $rc2 = STImag8 $a
+  $a = LDImag8 $rc1
+  $a, dead renamable $c, dead renamable $v = ADCImm killed $a(tied-def 0), 0, killed renamable $c(tied-def 1)
+  $rc3 = STImag8 $a
+  renamable $a = LDImm 1
+  STIndirIdx killed renamable $a, renamable $rs1, killed renamable $y :: (store (s8) into %ir.retval)
+  renamable $y = LDImm 1
+  renamable $a = LDImm 0
+  STIndirIdx killed renamable $a, killed renamable $rs1, killed renamable $y :: (store (s8) into %ir.retval + 1)
+  JMP %bb.3
+
+bb.2.if.end:
+; predecessors: %bb.0
+  successors: %bb.3(0x80000000); %bb.3(100.00%)
+
+  renamable $y = LDImm 0
+  renamable $c = LDCImm 0
+  $a = LDImag8 $rc0
+  $a, renamable $c, dead renamable $v = ADCImm killed $a(tied-def 0), 2, killed $c(tied-def 1)
+  $rc2 = STImag8 $a
+  $a = LDImag8 $rc1
+  $a, dead renamable $c, dead renamable $v = ADCImm killed $a(tied-def 0), 0, killed renamable $c(tied-def 1)
+  $rc3 = STImag8 $a
+  renamable $a = LDImm 0
+  STIndirIdx renamable $a, renamable $rs1, killed renamable $y :: (store (s8) into %ir.retval)
+  renamable $y = LDImm 1
+  STIndirIdx killed renamable $a, killed renamable $rs1, killed renamable $y :: (store (s8) into %ir.retval + 1)
+
+bb.3.return:
+; predecessors: %bb.2, %bb.1
+
+  renamable $y = LDImm 0
+  renamable $c = LDCImm 0
+  $a = LDImag8 $rc0
+  $a, renamable $c, dead renamable $v = ADCImm killed $a(tied-def 0), 2, killed $c(tied-def 1)
+  $rc2 = STImag8 $a
+  $a = LDImag8 $rc1
+  $a, dead renamable $c, dead renamable $v = ADCImm killed $a(tied-def 0), 0, killed renamable $c(tied-def 1)
+  $rc3 = STImag8 $a
+  renamable $a = LDIndirIdx renamable $rs1, killed renamable $y :: (dereferenceable load (s8) from %ir.retval)
+  $rc4 = STImag8 $a
+  renamable $y = LDImm 1
+  renamable $a = LDIndirIdx killed renamable $rs1, killed renamable $y :: (dereferenceable load (s8) from %ir.retval + 1)
+  $x = TA $a
+  $a = LDImag8 $rc4
+  PH killed $a
+  $c = LDCImm 0
+  $a = LDImag8 $rc0
+  $a, $c, dead $v = ADCImm killed $a(tied-def 0), 4, killed $c(tied-def 1)
+  $rc0 = STImag8 $a
+  $a = LDImag8 $rc1
+  $a, dead $c, dead $v = ADCImm killed $a(tied-def 0), 0, killed $c(tied-def 1)
+  $rc1 = STImag8 $a
+  $a = PL
+  RTS implicit killed $a, implicit killed $x
+
+# End machine code for function f.
+
+*** IR Dump After Finalize ISel and expand pseudo-instructions (finalize-isel) on f ***
+# Machine code for function f: NoPHIs, TracksLiveness, NoVRegs, Legalized, RegBankSelected, Selected, TiedOpsRewritten, TracksDebugUserValues
+Frame Objects:
+  fi#0: size=2, align=1, at location [SP-2]
+  fi#1: size=2, align=1, at location [SP-4]
+
+bb.0.entry:
+  successors: %bb.1, %bb.4
+  liveins: $a, $x
+  PH killed $a
+  $c = LDCImm 0
+  $a = LDImag8 $rc0
+  $a, $c, dead $v = ADCImm killed $a(tied-def 0), 252, killed $c(tied-def 1)
+  $rc0 = STImag8 $a
+  $a = LDImag8 $rc1
+  $a, dead $c, dead $v = ADCImm killed $a(tied-def 0), 255, killed $c(tied-def 1)
+  $rc1 = STImag8 $a
+  $a = PL
+  dead renamable $c = LDCImm 0
+  $y = LDImag8 $rc0
+  $rc2 = STImag8 killed $y
+  $y = LDImag8 $rc1
+  $rc3 = STImag8 killed $y
+  renamable $y = LDImm 0
+  STIndirIdx killed renamable $a, renamable $rs1, killed renamable $y :: (store (s8) into %ir.x.addr)
+  renamable $y = LDImm 1
+  $a = T_A $x
+  STIndirIdx killed renamable $a, renamable $rs1, killed renamable $y :: (store (s8) into %ir.x.addr + 1)
+  renamable $y = LDImm 0
+  renamable $a = LDIndirIdx renamable $rs1, killed renamable $y :: (dereferenceable load (s8) from %ir.x.addr)
+  $rc4 = STImag8 $a
+  renamable $y = LDImm 1
+  renamable $a = LDIndirIdx killed renamable $rs1, killed renamable $y :: (dereferenceable load (s8) from %ir.x.addr + 1)
+  CmpBrZero %bb.1, undef $z, 0, killed renamable $a, implicit-def $c
+  JMP %bb.4
+
+bb.4.entry:
+; predecessors: %bb.0
+  successors: %bb.1, %bb.2
+  liveins: $rc4
+  CmpBrZero %bb.2, undef $z, 1, killed renamable $rc4, implicit-def $c
+  JMP %bb.1
+
+bb.1.if.then:
+; predecessors: %bb.0, %bb.4
+  successors: %bb.3(0x80000000); %bb.3(100.00%)
+
+  renamable $y = LDImm 0
+  renamable $c = LDCImm 0
+  $a = LDImag8 $rc0
+  $a, renamable $c, dead renamable $v = ADCImm killed $a(tied-def 0), 2, killed $c(tied-def 1)
+  $rc2 = STImag8 $a
+  $a = LDImag8 $rc1
+  $a, dead renamable $c, dead renamable $v = ADCImm killed $a(tied-def 0), 0, killed renamable $c(tied-def 1)
+  $rc3 = STImag8 $a
+  renamable $a = LDImm 1
+  STIndirIdx killed renamable $a, renamable $rs1, killed renamable $y :: (store (s8) into %ir.retval)
+  renamable $y = LDImm 1
+  renamable $a = LDImm 0
+  STIndirIdx killed renamable $a, killed renamable $rs1, killed renamable $y :: (store (s8) into %ir.retval + 1)
+  JMP %bb.3
+
+bb.2.if.end:
+; predecessors: %bb.4
+  successors: %bb.3(0x80000000); %bb.3(100.00%)
+
+  renamable $y = LDImm 0
+  renamable $c = LDCImm 0
+  $a = LDImag8 $rc0
+  $a, renamable $c, dead renamable $v = ADCImm killed $a(tied-def 0), 2, killed $c(tied-def 1)
+  $rc2 = STImag8 $a
+  $a = LDImag8 $rc1
+  $a, dead renamable $c, dead renamable $v = ADCImm killed $a(tied-def 0), 0, killed renamable $c(tied-def 1)
+  $rc3 = STImag8 $a
+  renamable $a = LDImm 0
+  STIndirIdx renamable $a, renamable $rs1, killed renamable $y :: (store (s8) into %ir.retval)
+  renamable $y = LDImm 1
+  STIndirIdx killed renamable $a, killed renamable $rs1, killed renamable $y :: (store (s8) into %ir.retval + 1)
+
+bb.3.return:
+; predecessors: %bb.2, %bb.1
+
+  renamable $y = LDImm 0
+  renamable $c = LDCImm 0
+  $a = LDImag8 $rc0
+  $a, renamable $c, dead renamable $v = ADCImm killed $a(tied-def 0), 2, killed $c(tied-def 1)
+  $rc2 = STImag8 $a
+  $a = LDImag8 $rc1
+  $a, dead renamable $c, dead renamable $v = ADCImm killed $a(tied-def 0), 0, killed renamable $c(tied-def 1)
+  $rc3 = STImag8 $a
+  renamable $a = LDIndirIdx renamable $rs1, killed renamable $y :: (dereferenceable load (s8) from %ir.retval)
+  $rc4 = STImag8 $a
+  renamable $y = LDImm 1
+  renamable $a = LDIndirIdx killed renamable $rs1, killed renamable $y :: (dereferenceable load (s8) from %ir.retval + 1)
+  $x = TA $a
+  $a = LDImag8 $rc4
+  PH killed $a
+  $c = LDCImm 0
+  $a = LDImag8 $rc0
+  $a, $c, dead $v = ADCImm killed $a(tied-def 0), 4, killed $c(tied-def 1)
+  $rc0 = STImag8 $a
+  $a = LDImag8 $rc1
+  $a, dead $c, dead $v = ADCImm killed $a(tied-def 0), 0, killed $c(tied-def 1)
+  $rc1 = STImag8 $a
+  $a = PL
+  RTS implicit killed $a, implicit killed $x
+
+# End machine code for function f.
+
+*** IR Dump After Post-RA pseudo instruction expansion pass (postrapseudos) on f ***
+# Machine code for function f: NoPHIs, TracksLiveness, NoVRegs, Legalized, RegBankSelected, Selected, TiedOpsRewritten, TracksDebugUserValues
+Frame Objects:
+  fi#0: size=2, align=1, at location [SP-2]
+  fi#1: size=2, align=1, at location [SP-4]
+
+bb.0.entry:
+  successors: %bb.1, %bb.4
+  liveins: $a, $x
+  PH killed $a
+  $c = LDCImm 0
+  $a = LDImag8 $rc0
+  $a, $c, dead $v = ADCImm killed $a(tied-def 0), 252, killed $c(tied-def 1)
+  $rc0 = STImag8 $a
+  $a = LDImag8 $rc1
+  $a, dead $c, dead $v = ADCImm killed $a(tied-def 0), 255, killed $c(tied-def 1)
+  $rc1 = STImag8 $a
+  $a = PL
+  dead renamable $c = LDCImm 0
+  $y = LDImag8 $rc0
+  $rc2 = STImag8 killed $y
+  $y = LDImag8 $rc1
+  $rc3 = STImag8 killed $y
+  renamable $y = LDImm 0
+  STIndirIdx killed renamable $a, renamable $rs1, killed renamable $y :: (store (s8) into %ir.x.addr)
+  renamable $y = LDImm 1
+  $a = T_A $x
+  STIndirIdx killed renamable $a, renamable $rs1, killed renamable $y :: (store (s8) into %ir.x.addr + 1)
+  renamable $y = LDImm 0
+  renamable $a = LDIndirIdx renamable $rs1, killed renamable $y :: (dereferenceable load (s8) from %ir.x.addr)
+  $rc4 = STImag8 $a
+  renamable $y = LDImm 1
+  renamable $a = LDIndirIdx killed renamable $rs1, killed renamable $y :: (dereferenceable load (s8) from %ir.x.addr + 1)
+  CmpZero killed renamable $a, implicit-def $c, implicit-def $c, implicit-def $z
+  BR %bb.1, killed $z, 0
+  JMP %bb.4
+
+bb.4.entry:
+; predecessors: %bb.0
+  successors: %bb.1, %bb.2
+  liveins: $rc4
+  CmpZero killed renamable $rc4, implicit-def $c, implicit-def $c, implicit-def $z
+  BR %bb.2, killed $z, 1
+  JMP %bb.1
+
+bb.1.if.then:
+; predecessors: %bb.0, %bb.4
+  successors: %bb.3(0x80000000); %bb.3(100.00%)
+
+  renamable $y = LDImm 0
+  renamable $c = LDCImm 0
+  $a = LDImag8 $rc0
+  $a, renamable $c, dead renamable $v = ADCImm killed $a(tied-def 0), 2, killed $c(tied-def 1)
+  $rc2 = STImag8 $a
+  $a = LDImag8 $rc1
+  $a, dead renamable $c, dead renamable $v = ADCImm killed $a(tied-def 0), 0, killed renamable $c(tied-def 1)
+  $rc3 = STImag8 $a
+  renamable $a = LDImm 1
+  STIndirIdx killed renamable $a, renamable $rs1, killed renamable $y :: (store (s8) into %ir.retval)
+  renamable $y = LDImm 1
+  renamable $a = LDImm 0
+  STIndirIdx killed renamable $a, killed renamable $rs1, killed renamable $y :: (store (s8) into %ir.retval + 1)
+  JMP %bb.3
+
+bb.2.if.end:
+; predecessors: %bb.4
+  successors: %bb.3(0x80000000); %bb.3(100.00%)
+
+  renamable $y = LDImm 0
+  renamable $c = LDCImm 0
+  $a = LDImag8 $rc0
+  $a, renamable $c, dead renamable $v = ADCImm killed $a(tied-def 0), 2, killed $c(tied-def 1)
+  $rc2 = STImag8 $a
+  $a = LDImag8 $rc1
+  $a, dead renamable $c, dead renamable $v = ADCImm killed $a(tied-def 0), 0, killed renamable $c(tied-def 1)
+  $rc3 = STImag8 $a
+  renamable $a = LDImm 0
+  STIndirIdx renamable $a, renamable $rs1, killed renamable $y :: (store (s8) into %ir.retval)
+  renamable $y = LDImm 1
+  STIndirIdx killed renamable $a, killed renamable $rs1, killed renamable $y :: (store (s8) into %ir.retval + 1)
+
+bb.3.return:
+; predecessors: %bb.2, %bb.1
+
+  renamable $y = LDImm 0
+  renamable $c = LDCImm 0
+  $a = LDImag8 $rc0
+  $a, renamable $c, dead renamable $v = ADCImm killed $a(tied-def 0), 2, killed $c(tied-def 1)
+  $rc2 = STImag8 $a
+  $a = LDImag8 $rc1
+  $a, dead renamable $c, dead renamable $v = ADCImm killed $a(tied-def 0), 0, killed renamable $c(tied-def 1)
+  $rc3 = STImag8 $a
+  renamable $a = LDIndirIdx renamable $rs1, killed renamable $y :: (dereferenceable load (s8) from %ir.retval)
+  $rc4 = STImag8 $a
+  renamable $y = LDImm 1
+  renamable $a = LDIndirIdx killed renamable $rs1, killed renamable $y :: (dereferenceable load (s8) from %ir.retval + 1)
+  $x = TA $a
+  $a = LDImag8 $rc4
+  PH killed $a
+  $c = LDCImm 0
+  $a = LDImag8 $rc0
+  $a, $c, dead $v = ADCImm killed $a(tied-def 0), 4, killed $c(tied-def 1)
+  $rc0 = STImag8 $a
+  $a = LDImag8 $rc1
+  $a, dead $c, dead $v = ADCImm killed $a(tied-def 0), 0, killed $c(tied-def 1)
+  $rc1 = STImag8 $a
+  $a = PL
+  RTS implicit killed $a, implicit killed $x
+
+# End machine code for function f.
+
+*** IR Dump After Scavenge virtual registers emitted by post-RA pseudos (mos-scavenging) on f omitted because no change ***
+*** IR Dump After MOS Late Optimizations (mos-late-opt) on f ***
+# Machine code for function f: NoPHIs, TracksLiveness, NoVRegs, Legalized, RegBankSelected, Selected, TiedOpsRewritten, TracksDebugUserValues
+Frame Objects:
+  fi#0: size=2, align=1, at location [SP-2]
+  fi#1: size=2, align=1, at location [SP-4]
+
+bb.0.entry:
+  successors: %bb.1, %bb.4
+  liveins: $a, $x
+  PH killed $a
+  $c = LDCImm 0
+  $a = LDImag8 $rc0
+  $a, $c, dead $v = ADCImm killed $a(tied-def 0), 252, killed $c(tied-def 1)
+  $rc0 = STImag8 $a
+  $a = LDImag8 $rc1
+  $a, dead $c, dead $v = ADCImm killed $a(tied-def 0), 255, killed $c(tied-def 1)
+  $rc1 = STImag8 $a
+  $a = PL
+  dead renamable $c = LDCImm 0
+  $y = LDImag8 $rc0
+  $rc2 = STImag8 killed $y
+  $y = LDImag8 $rc1
+  $rc3 = STImag8 killed $y
+  renamable $y = LDImm 0
+  STIndirIdx killed renamable $a, renamable $rs1, renamable $y :: (store (s8) into %ir.x.addr)
+  renamable $y = INC $y(tied-def 0)
+  $a = T_A $x
+  STIndirIdx killed renamable $a, renamable $rs1, renamable $y :: (store (s8) into %ir.x.addr + 1)
+  renamable $y = DEC $y(tied-def 0)
+  renamable $a = LDIndirIdx renamable $rs1, renamable $y :: (dereferenceable load (s8) from %ir.x.addr)
+  $rc4 = STImag8 $a
+  renamable $y = INC killed $y(tied-def 0)
+  renamable $a = LDIndirIdx killed renamable $rs1, killed renamable $y, implicit-def $nz :: (dereferenceable load (s8) from %ir.x.addr + 1)
+  BR %bb.1, killed $z, 0
+  JMP %bb.4
+
+bb.4.entry:
+; predecessors: %bb.0
+  successors: %bb.1, %bb.2
+  liveins: $rc4
+  dead $a = LDImag8 $rc4, implicit-def $nz
+  BR %bb.2, killed $z, 1
+  JMP %bb.1
+
+bb.1.if.then:
+; predecessors: %bb.0, %bb.4
+  successors: %bb.3(0x80000000); %bb.3(100.00%)
+
+  renamable $y = LDImm 0
+  renamable $c = LDCImm 0
+  $a = LDImag8 $rc0
+  $a, renamable $c, dead renamable $v = ADCImm killed $a(tied-def 0), 2, killed $c(tied-def 1)
+  $rc2 = STImag8 $a
+  $a = LDImag8 $rc1
+  $a, dead renamable $c, dead renamable $v = ADCImm killed $a(tied-def 0), 0, killed renamable $c(tied-def 1)
+  $rc3 = STImag8 $a
+  renamable $a = LDImm 1
+  STIndirIdx renamable $a, renamable $rs1, killed renamable $y :: (store (s8) into %ir.retval)
+  renamable $y = TA $a
+  renamable $a = LDImm 0
+  STIndirIdx killed renamable $a, killed renamable $rs1, killed renamable $y :: (store (s8) into %ir.retval + 1)
+  JMP %bb.3
+
+bb.2.if.end:
+; predecessors: %bb.4
+  successors: %bb.3(0x80000000); %bb.3(100.00%)
+
+  renamable $y = LDImm 0
+  renamable $c = LDCImm 0
+  $a = LDImag8 $rc0
+  $a, renamable $c, dead renamable $v = ADCImm killed $a(tied-def 0), 2, killed $c(tied-def 1)
+  $rc2 = STImag8 $a
+  $a = LDImag8 $rc1
+  $a, dead renamable $c, dead renamable $v = ADCImm killed $a(tied-def 0), 0, killed renamable $c(tied-def 1)
+  $rc3 = STImag8 $a
+  renamable $a = T_A $y
+  STIndirIdx renamable $a, renamable $rs1, renamable $y :: (store (s8) into %ir.retval)
+  renamable $y = INC killed $y(tied-def 0)
+  STIndirIdx killed renamable $a, killed renamable $rs1, killed renamable $y :: (store (s8) into %ir.retval + 1)
+
+bb.3.return:
+; predecessors: %bb.2, %bb.1
+
+  renamable $y = LDImm 0
+  renamable $c = LDCImm 0
+  $a = LDImag8 $rc0
+  $a, renamable $c, dead renamable $v = ADCImm killed $a(tied-def 0), 2, killed $c(tied-def 1)
+  $rc2 = STImag8 $a
+  $a = LDImag8 $rc1
+  $a, dead renamable $c, dead renamable $v = ADCImm killed $a(tied-def 0), 0, killed renamable $c(tied-def 1)
+  $rc3 = STImag8 $a
+  renamable $a = LDIndirIdx renamable $rs1, renamable $y :: (dereferenceable load (s8) from %ir.retval)
+  $rc4 = STImag8 $a
+  renamable $y = INC killed $y(tied-def 0)
+  renamable $a = LDIndirIdx killed renamable $rs1, killed renamable $y :: (dereferenceable load (s8) from %ir.retval + 1)
+  $x = TA $a
+  $a = LDImag8 $rc4
+  PH killed $a
+  $c = LDCImm 0
+  $a = LDImag8 $rc0
+  $a, $c, dead $v = ADCImm killed $a(tied-def 0), 4, killed $c(tied-def 1)
+  $rc0 = STImag8 $a
+  $a = LDImag8 $rc1
+  $a, dead $c, dead $v = ADCImm killed $a(tied-def 0), 0, killed $c(tied-def 1)
+  $rc1 = STImag8 $a
+  $a = PL
+  RTS implicit killed $a, implicit killed $x
+
+# End machine code for function f.
+
+*** IR Dump After Analyze Machine Code For Garbage Collection (gc-analysis) on f omitted because no change ***
+*** IR Dump After MachineDominator Tree Construction (machinedomtree) on f omitted because no change ***
+*** IR Dump After Machine Natural Loop Construction (machine-loops) on f omitted because no change ***
+*** IR Dump After Machine Block Frequency Analysis (machine-block-freq) on f omitted because no change ***
+*** IR Dump After MachinePostDominator Tree Construction (machinepostdomtree) on f omitted because no change ***
+*** IR Dump After Branch Probability Basic Block Placement (block-placement) on f omitted because no change ***
+*** IR Dump After Insert fentry calls (fentry-insert) on f omitted because no change ***
+*** IR Dump After Insert XRay ops (xray-instrumentation) on f omitted because no change ***
+*** IR Dump After Implement the 'patchable-function' attribute (patchable-function) on f omitted because no change ***
+*** IR Dump After Branch relaxation pass (branch-relaxation) on f ***
+# Machine code for function f: NoPHIs, TracksLiveness, NoVRegs, Legalized, RegBankSelected, Selected, TiedOpsRewritten, TracksDebugUserValues
+Frame Objects:
+  fi#0: size=2, align=1, at location [SP-2]
+  fi#1: size=2, align=1, at location [SP-4]
+
+bb.0.entry:
+  successors: %bb.2, %bb.1
+  liveins: $a, $x
+  PH killed $a
+  $c = LDCImm 0
+  $a = LDImag8 $rc0
+  $a, $c, dead $v = ADCImm killed $a(tied-def 0), 252, killed $c(tied-def 1)
+  $rc0 = STImag8 $a
+  $a = LDImag8 $rc1
+  $a, dead $c, dead $v = ADCImm killed $a(tied-def 0), 255, killed $c(tied-def 1)
+  $rc1 = STImag8 $a
+  $a = PL
+  dead renamable $c = LDCImm 0
+  $y = LDImag8 $rc0
+  $rc2 = STImag8 killed $y
+  $y = LDImag8 $rc1
+  $rc3 = STImag8 killed $y
+  renamable $y = LDImm 0
+  STIndirIdx killed renamable $a, renamable $rs1, renamable $y :: (store (s8) into %ir.x.addr)
+  renamable $y = INC $y(tied-def 0)
+  $a = T_A $x
+  STIndirIdx killed renamable $a, renamable $rs1, renamable $y :: (store (s8) into %ir.x.addr + 1)
+  renamable $y = DEC $y(tied-def 0)
+  renamable $a = LDIndirIdx renamable $rs1, renamable $y :: (dereferenceable load (s8) from %ir.x.addr)
+  $rc4 = STImag8 $a
+  renamable $y = INC killed $y(tied-def 0)
+  renamable $a = LDIndirIdx killed renamable $rs1, killed renamable $y, implicit-def $nz :: (dereferenceable load (s8) from %ir.x.addr + 1)
+  BR %bb.2, killed $z, 0
+  JMP %bb.1
+
+bb.1.entry:
+; predecessors: %bb.0
+  successors: %bb.2, %bb.3
+  liveins: $rc4
+  dead $a = LDImag8 $rc4, implicit-def $nz
+  BR %bb.3, killed $z, 1
+  JMP %bb.2
+
+bb.2.if.then:
+; predecessors: %bb.0, %bb.1
+  successors: %bb.4(0x80000000); %bb.4(100.00%)
+
+  renamable $y = LDImm 0
+  renamable $c = LDCImm 0
+  $a = LDImag8 $rc0
+  $a, renamable $c, dead renamable $v = ADCImm killed $a(tied-def 0), 2, killed $c(tied-def 1)
+  $rc2 = STImag8 $a
+  $a = LDImag8 $rc1
+  $a, dead renamable $c, dead renamable $v = ADCImm killed $a(tied-def 0), 0, killed renamable $c(tied-def 1)
+  $rc3 = STImag8 $a
+  renamable $a = LDImm 1
+  STIndirIdx renamable $a, renamable $rs1, killed renamable $y :: (store (s8) into %ir.retval)
+  renamable $y = TA $a
+  renamable $a = LDImm 0
+  STIndirIdx killed renamable $a, killed renamable $rs1, killed renamable $y :: (store (s8) into %ir.retval + 1)
+  JMP %bb.4
+
+bb.3.if.end:
+; predecessors: %bb.1
+  successors: %bb.4(0x80000000); %bb.4(100.00%)
+
+  renamable $y = LDImm 0
+  renamable $c = LDCImm 0
+  $a = LDImag8 $rc0
+  $a, renamable $c, dead renamable $v = ADCImm killed $a(tied-def 0), 2, killed $c(tied-def 1)
+  $rc2 = STImag8 $a
+  $a = LDImag8 $rc1
+  $a, dead renamable $c, dead renamable $v = ADCImm killed $a(tied-def 0), 0, killed renamable $c(tied-def 1)
+  $rc3 = STImag8 $a
+  renamable $a = T_A $y
+  STIndirIdx renamable $a, renamable $rs1, renamable $y :: (store (s8) into %ir.retval)
+  renamable $y = INC killed $y(tied-def 0)
+  STIndirIdx killed renamable $a, killed renamable $rs1, killed renamable $y :: (store (s8) into %ir.retval + 1)
+
+bb.4.return:
+; predecessors: %bb.3, %bb.2
+
+  renamable $y = LDImm 0
+  renamable $c = LDCImm 0
+  $a = LDImag8 $rc0
+  $a, renamable $c, dead renamable $v = ADCImm killed $a(tied-def 0), 2, killed $c(tied-def 1)
+  $rc2 = STImag8 $a
+  $a = LDImag8 $rc1
+  $a, dead renamable $c, dead renamable $v = ADCImm killed $a(tied-def 0), 0, killed renamable $c(tied-def 1)
+  $rc3 = STImag8 $a
+  renamable $a = LDIndirIdx renamable $rs1, renamable $y :: (dereferenceable load (s8) from %ir.retval)
+  $rc4 = STImag8 $a
+  renamable $y = INC killed $y(tied-def 0)
+  renamable $a = LDIndirIdx killed renamable $rs1, killed renamable $y :: (dereferenceable load (s8) from %ir.retval + 1)
+  $x = TA $a
+  $a = LDImag8 $rc4
+  PH killed $a
+  $c = LDCImm 0
+  $a = LDImag8 $rc0
+  $a, $c, dead $v = ADCImm killed $a(tied-def 0), 4, killed $c(tied-def 1)
+  $rc0 = STImag8 $a
+  $a = LDImag8 $rc1
+  $a, dead $c, dead $v = ADCImm killed $a(tied-def 0), 0, killed $c(tied-def 1)
+  $rc1 = STImag8 $a
+  $a = PL
+  RTS implicit killed $a, implicit killed $x
+
+# End machine code for function f.
+
+*** IR Dump After Contiguously Lay Out Funclets (funclet-layout) on f omitted because no change ***
+*** IR Dump After Remove Loads Into Fake Uses (remove-loads-into-fake-uses) on f omitted because no change ***
+*** IR Dump After StackMap Liveness Analysis (stackmap-liveness) on f omitted because no change ***
+*** IR Dump After Live DEBUG_VALUE analysis (livedebugvalues) on f omitted because no change ***
+*** IR Dump After Machine Sanitizer Binary Metadata (machine-sanmd) on f omitted because no change ***
+*** IR Dump After Lazy Machine Block Frequency Analysis (lazy-machine-block-freq) on f omitted because no change ***
+*** IR Dump After Machine Optimization Remark Emitter (machine-opt-remark-emitter) on f omitted because no change ***
+*** IR Dump After Stack Frame Layout Analysis (stack-frame-layout) on f omitted because no change ***
+*** IR Dump After Unnamed pass: implement Pass::getPassName() on f omitted because no change ***

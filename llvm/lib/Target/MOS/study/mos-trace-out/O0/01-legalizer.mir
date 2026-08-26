@@ -1,0 +1,187 @@
+--- |
+  ; ModuleID = 'mos-trace-out/O0/00-input.ll'
+  source_filename = "test.c"
+  target datalayout = "e-m:e-p:16:8-p1:8:8-i16:8-i32:8-i64:8-f32:8-f64:8-a:8-Fi8-n8"
+  target triple = "mos"
+  
+  ; Function Attrs: noinline norecurse nounwind optnone
+  define dso_local i16 @f(i16 noundef %x) #0 {
+  entry:
+    %retval = alloca i16, align 1
+    %x.addr = alloca i16, align 1
+    store i16 %x, ptr %x.addr, align 1
+    %0 = load i16, ptr %x.addr, align 1
+    %tobool = icmp ne i16 %0, 0
+    br i1 %tobool, label %if.then, label %if.end
+  
+  if.then:                                          ; preds = %entry
+    store i16 1, ptr %retval, align 1
+    br label %return
+  
+  if.end:                                           ; preds = %entry
+    store i16 0, ptr %retval, align 1
+    br label %return
+  
+  return:                                           ; preds = %if.end, %if.then
+    %1 = load i16, ptr %retval, align 1
+    ret i16 %1
+  }
+  
+  attributes #0 = { noinline norecurse nounwind optnone "frame-pointer"="all" "no-trapping-math"="true" "nonreentrant" "stack-protector-buffer-size"="8" }
+  
+  !llvm.module.flags = !{!0, !1}
+  !llvm.ident = !{!2}
+  
+  !0 = !{i32 1, !"wchar_size", i32 4}
+  !1 = !{i32 7, !"frame-pointer", i32 2}
+  !2 = !{!"clang version 23.0.0git (https://github.com/duzhaofeng/llvm-mos.git 751cafccae5b6d6f1300760fa5dfb4f1699bf65d)"}
+
+...
+---
+name:            f
+alignment:       1
+exposesReturnsTwice: false
+legalized:       true
+regBankSelected: false
+selected:        false
+failedISel:      false
+tracksRegLiveness: true
+hasWinCFI:       false
+noPhis:          false
+isSSA:           true
+noVRegs:         false
+hasFakeUses:     false
+callsEHReturn:   false
+callsUnwindInit: false
+hasEHCatchret:   false
+hasEHScopes:     false
+hasEHFunclets:   false
+isOutlined:      false
+debugInstrRef:   false
+failsVerification: false
+tracksDebugUserValues: false
+registers:
+  - { id: 0, class: _, preferred-register: '', flags: [  ] }
+  - { id: 1, class: _, preferred-register: '', flags: [  ] }
+  - { id: 2, class: _, preferred-register: '', flags: [  ] }
+  - { id: 3, class: _, preferred-register: '', flags: [  ] }
+  - { id: 4, class: _, preferred-register: '', flags: [  ] }
+  - { id: 5, class: _, preferred-register: '', flags: [  ] }
+  - { id: 6, class: _, preferred-register: '', flags: [  ] }
+  - { id: 7, class: _, preferred-register: '', flags: [  ] }
+  - { id: 8, class: _, preferred-register: '', flags: [  ] }
+  - { id: 9, class: _, preferred-register: '', flags: [  ] }
+  - { id: 10, class: _, preferred-register: '', flags: [  ] }
+  - { id: 11, class: _, preferred-register: '', flags: [  ] }
+  - { id: 12, class: _, preferred-register: '', flags: [  ] }
+  - { id: 13, class: _, preferred-register: '', flags: [  ] }
+  - { id: 14, class: _, preferred-register: '', flags: [  ] }
+  - { id: 15, class: _, preferred-register: '', flags: [  ] }
+  - { id: 16, class: _, preferred-register: '', flags: [  ] }
+  - { id: 17, class: _, preferred-register: '', flags: [  ] }
+  - { id: 18, class: _, preferred-register: '', flags: [  ] }
+  - { id: 19, class: _, preferred-register: '', flags: [  ] }
+  - { id: 20, class: _, preferred-register: '', flags: [  ] }
+  - { id: 21, class: _, preferred-register: '', flags: [  ] }
+  - { id: 22, class: _, preferred-register: '', flags: [  ] }
+  - { id: 23, class: _, preferred-register: '', flags: [  ] }
+  - { id: 24, class: _, preferred-register: '', flags: [  ] }
+  - { id: 25, class: _, preferred-register: '', flags: [  ] }
+  - { id: 26, class: _, preferred-register: '', flags: [  ] }
+  - { id: 27, class: _, preferred-register: '', flags: [  ] }
+  - { id: 28, class: _, preferred-register: '', flags: [  ] }
+  - { id: 29, class: _, preferred-register: '', flags: [  ] }
+  - { id: 30, class: _, preferred-register: '', flags: [  ] }
+  - { id: 31, class: _, preferred-register: '', flags: [  ] }
+  - { id: 32, class: _, preferred-register: '', flags: [  ] }
+  - { id: 33, class: _, preferred-register: '', flags: [  ] }
+  - { id: 34, class: _, preferred-register: '', flags: [  ] }
+  - { id: 35, class: _, preferred-register: '', flags: [  ] }
+  - { id: 36, class: _, preferred-register: '', flags: [  ] }
+  - { id: 37, class: _, preferred-register: '', flags: [  ] }
+  - { id: 38, class: _, preferred-register: '', flags: [  ] }
+  - { id: 39, class: _, preferred-register: '', flags: [  ] }
+  - { id: 40, class: _, preferred-register: '', flags: [  ] }
+  - { id: 41, class: _, preferred-register: '', flags: [  ] }
+liveins:         []
+frameInfo:
+  isFrameAddressTaken: false
+  isReturnAddressTaken: false
+  hasStackMap:     false
+  hasPatchPoint:   false
+  stackSize:       0
+  offsetAdjustment: 0
+  maxAlignment:    1
+  adjustsStack:    false
+  hasCalls:        false
+  stackProtector:  ''
+  functionContext: ''
+  maxCallFrameSize: 4294967295
+  cvBytesOfCalleeSavedRegisters: 0
+  hasOpaqueSPAdjustment: false
+  hasVAStart:      false
+  hasMustTailInVarArgFunc: false
+  hasTailCall:     false
+  isCalleeSavedInfoValid: false
+  localFrameSize:  0
+  savePoint:       ''
+  restorePoint:    ''
+fixedStack:      []
+stack:
+  - { id: 0, name: retval, type: default, offset: 0, size: 2, alignment: 1, 
+      stack-id: default, callee-saved-register: '', callee-saved-restored: true, 
+      debug-info-variable: '', debug-info-expression: '', debug-info-location: '' }
+  - { id: 1, name: x.addr, type: default, offset: 0, size: 2, alignment: 1, 
+      stack-id: default, callee-saved-register: '', callee-saved-restored: true, 
+      debug-info-variable: '', debug-info-expression: '', debug-info-location: '' }
+entry_values:    []
+callSites:       []
+debugValueSubstitutions: []
+constants:       []
+machineFunctionInfo: {}
+body:             |
+  bb.1.entry:
+    successors: %bb.2(0x40000000), %bb.3(0x40000000)
+    liveins: $a, $x
+  
+    %1:_(s8) = COPY $a
+    %2:_(s8) = COPY $x
+    %38:_(s8) = G_CONSTANT i8 0
+    %37:_(s8) = G_CONSTANT i8 1
+    %3:_(p0) = G_FRAME_INDEX %stack.0.retval
+    %4:_(p0) = G_FRAME_INDEX %stack.1.x.addr
+    G_STORE_INDIR_IDX %1(s8), %4(p0), %38 :: (store (s8) into %ir.x.addr)
+    G_STORE_INDIR_IDX %2(s8), %4(p0), %37 :: (store (s8) into %ir.x.addr + 1)
+    %34:_(s8) = G_LOAD_INDIR_IDX %4(p0), %38 :: (dereferenceable load (s8) from %ir.x.addr)
+    %36:_(s8) = G_LOAD_INDIR_IDX %4(p0), %37 :: (dereferenceable load (s8) from %ir.x.addr + 1)
+    %7:_(s1) = G_CMPZ %34(s8), %36(s8)
+    G_BRCOND_IMM %7(s1), %bb.3, 1
+    G_BR %bb.2
+  
+  bb.2.if.then:
+    successors: %bb.4(0x80000000)
+  
+    %25:_(s8) = G_CONSTANT i8 0
+    G_STORE_INDIR_IDX %37(s8), %3(p0), %25 :: (store (s8) into %ir.retval)
+    %24:_(s8) = G_CONSTANT i8 1
+    G_STORE_INDIR_IDX %38(s8), %3(p0), %24 :: (store (s8) into %ir.retval + 1)
+    G_BR %bb.4
+  
+  bb.3.if.end:
+    successors: %bb.4(0x80000000)
+  
+    %31:_(s8) = G_CONSTANT i8 0
+    G_STORE_INDIR_IDX %38(s8), %3(p0), %31 :: (store (s8) into %ir.retval)
+    %30:_(s8) = G_CONSTANT i8 1
+    G_STORE_INDIR_IDX %38(s8), %3(p0), %30 :: (store (s8) into %ir.retval + 1)
+  
+  bb.4.return:
+    %19:_(s8) = G_CONSTANT i8 0
+    %14:_(s8) = G_LOAD_INDIR_IDX %3(p0), %19 :: (dereferenceable load (s8) from %ir.retval)
+    %18:_(s8) = G_CONSTANT i8 1
+    %17:_(s8) = G_LOAD_INDIR_IDX %3(p0), %18 :: (dereferenceable load (s8) from %ir.retval + 1)
+    $a = COPY %14(s8)
+    $x = COPY %17(s8)
+    RTS implicit $a, implicit $x
+
+...

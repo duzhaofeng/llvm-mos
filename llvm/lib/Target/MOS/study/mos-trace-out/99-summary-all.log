@@ -1,0 +1,76 @@
+===== O0 =====
+==== O0 / 01-legalizer.mir: G_BRCOND / G_BRCOND_IMM ====
+158:    G_BRCOND_IMM %7(s1), %bb.3, 1
+
+==== O0 / 02-mos-lower-select.log: G_SELECT / G_BRCOND / G_BRCOND_IMM ====
+21:  G_BRCOND_IMM %7:_(s1), %bb.3, 1
+76:  G_BRCOND_IMM %7:_(s1), %bb.3, 1
+
+==== O0 / 03-isel.mir: branch-like opcodes ====
+188:    CmpBrZeroMultiByte %bb.3, 1, %34, %36, implicit-def $c
+189:    JMP %bb.2
+203:    JMP %bb.4
+
+==== O0 / 04-final.s: asm branch mnemonics ====
+63:	bne	.LBB0_2
+64:	jmp	.LBB0_1
+67:	beq	.LBB0_3
+68:	jmp	.LBB0_2
+83:	jmp	.LBB0_4
+
+===== O1 =====
+==== O1 / 01-legalizer.mir: G_BRCOND / G_BRCOND_IMM ====
+
+==== O1 / 02-mos-lower-select.log: G_SELECT / G_BRCOND / G_BRCOND_IMM ====
+13:  %26:_(s1) = G_SELECT %25:_(s1), %10:_, %19:_
+14:  %9:_(s1) = G_SELECT %31:_(s1), %26:_, %19:_
+16:  %13:_(s8) = G_SELECT %9:_(s1), %8:_, %12:_
+34:  G_BRCOND_IMM %31:_(s1), %bb.5, 1
+42:  G_BRCOND_IMM %25:_(s1), %bb.8, 1
+
+==== O1 / 03-isel.mir: branch-like opcodes ====
+27:  !6 = !{!"Simple C/C++ TBAA"}
+127:    CmpBrZero %bb.5, undef $z, 1, %2, implicit-def $c
+128:    JMP %bb.6
+133:    CmpBrZero %bb.8, undef $z, 1, %1, implicit-def $c
+134:    JMP %bb.9
+139:    JMP %bb.2
+144:    JMP %bb.10
+149:    JMP %bb.7
+154:    JMP %bb.7
+159:    JMP %bb.3
+165:    JMP %bb.4
+171:    JMP %bb.4
+
+==== O1 / 04-final.s: asm branch mnemonics ====
+40:	bne	.LBB0_3
+43:	bne	.LBB0_3
+
+===== O2 =====
+==== O2 / 01-legalizer.mir: G_BRCOND / G_BRCOND_IMM ====
+
+==== O2 / 02-mos-lower-select.log: G_SELECT / G_BRCOND / G_BRCOND_IMM ====
+13:  %26:_(s1) = G_SELECT %25:_(s1), %10:_, %19:_
+14:  %9:_(s1) = G_SELECT %31:_(s1), %26:_, %19:_
+16:  %13:_(s8) = G_SELECT %9:_(s1), %8:_, %12:_
+34:  G_BRCOND_IMM %31:_(s1), %bb.5, 1
+42:  G_BRCOND_IMM %25:_(s1), %bb.8, 1
+
+==== O2 / 03-isel.mir: branch-like opcodes ====
+27:  !6 = !{!"Simple C/C++ TBAA"}
+127:    CmpBrZero %bb.5, undef $z, 1, %2, implicit-def $c
+128:    JMP %bb.6
+133:    CmpBrZero %bb.8, undef $z, 1, %1, implicit-def $c
+134:    JMP %bb.9
+139:    JMP %bb.2
+144:    JMP %bb.10
+149:    JMP %bb.7
+154:    JMP %bb.7
+159:    JMP %bb.3
+165:    JMP %bb.4
+171:    JMP %bb.4
+
+==== O2 / 04-final.s: asm branch mnemonics ====
+40:	bne	.LBB0_3
+43:	bne	.LBB0_3
+

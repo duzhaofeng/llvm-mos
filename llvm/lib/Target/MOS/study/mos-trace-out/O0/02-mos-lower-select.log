@@ -1,0 +1,110 @@
+# *** IR Dump Before Lower MOS Select pseudo-instruction (mos-lower-select) ***:
+# Machine code for function f: IsSSA, TracksLiveness, Legalized
+Frame Objects:
+  fi#0: size=2, align=1, at location [SP]
+  fi#1: size=2, align=1, at location [SP]
+
+bb.1.entry:
+  successors: %bb.2, %bb.3
+  liveins: $a, $x
+  %1:_(s8) = COPY $a
+  %2:_(s8) = COPY $x
+  %38:_(s8) = G_CONSTANT i8 0
+  %37:_(s8) = G_CONSTANT i8 1
+  %3:_(p0) = G_FRAME_INDEX %stack.0.retval
+  %4:_(p0) = G_FRAME_INDEX %stack.1.x.addr
+  G_STORE_INDIR_IDX %1:_(s8), %4:_(p0), %38:_ :: (store (s8) into %ir.x.addr)
+  G_STORE_INDIR_IDX %2:_(s8), %4:_(p0), %37:_ :: (store (s8) into %ir.x.addr + 1)
+  %34:_(s8) = G_LOAD_INDIR_IDX %4:_(p0), %38:_ :: (dereferenceable load (s8) from %ir.x.addr)
+  %36:_(s8) = G_LOAD_INDIR_IDX %4:_(p0), %37:_ :: (dereferenceable load (s8) from %ir.x.addr + 1)
+  %7:_(s1) = G_CMPZ %34:_(s8), %36:_(s8)
+  G_BRCOND_IMM %7:_(s1), %bb.3, 1
+  G_BR %bb.2
+
+bb.2.if.then:
+; predecessors: %bb.1
+  successors: %bb.4(0x80000000); %bb.4(100.00%)
+
+  %25:_(s8) = G_CONSTANT i8 0
+  G_STORE_INDIR_IDX %37:_(s8), %3:_(p0), %25:_ :: (store (s8) into %ir.retval)
+  %24:_(s8) = G_CONSTANT i8 1
+  G_STORE_INDIR_IDX %38:_(s8), %3:_(p0), %24:_ :: (store (s8) into %ir.retval + 1)
+  G_BR %bb.4
+
+bb.3.if.end:
+; predecessors: %bb.1
+  successors: %bb.4(0x80000000); %bb.4(100.00%)
+
+  %31:_(s8) = G_CONSTANT i8 0
+  G_STORE_INDIR_IDX %38:_(s8), %3:_(p0), %31:_ :: (store (s8) into %ir.retval)
+  %30:_(s8) = G_CONSTANT i8 1
+  G_STORE_INDIR_IDX %38:_(s8), %3:_(p0), %30:_ :: (store (s8) into %ir.retval + 1)
+
+bb.4.return:
+; predecessors: %bb.3, %bb.2
+
+  %19:_(s8) = G_CONSTANT i8 0
+  %14:_(s8) = G_LOAD_INDIR_IDX %3:_(p0), %19:_ :: (dereferenceable load (s8) from %ir.retval)
+  %18:_(s8) = G_CONSTANT i8 1
+  %17:_(s8) = G_LOAD_INDIR_IDX %3:_(p0), %18:_ :: (dereferenceable load (s8) from %ir.retval + 1)
+  $a = COPY %14:_(s8)
+  $x = COPY %17:_(s8)
+  RTS implicit $a, implicit $x
+
+# End machine code for function f.
+
+# *** IR Dump After Lower MOS Select pseudo-instruction (mos-lower-select) ***:
+# Machine code for function f: IsSSA, TracksLiveness, Legalized
+Frame Objects:
+  fi#0: size=2, align=1, at location [SP]
+  fi#1: size=2, align=1, at location [SP]
+
+bb.1.entry:
+  successors: %bb.2, %bb.3
+  liveins: $a, $x
+  %1:_(s8) = COPY $a
+  %2:_(s8) = COPY $x
+  %38:_(s8) = G_CONSTANT i8 0
+  %37:_(s8) = G_CONSTANT i8 1
+  %3:_(p0) = G_FRAME_INDEX %stack.0.retval
+  %4:_(p0) = G_FRAME_INDEX %stack.1.x.addr
+  G_STORE_INDIR_IDX %1:_(s8), %4:_(p0), %38:_ :: (store (s8) into %ir.x.addr)
+  G_STORE_INDIR_IDX %2:_(s8), %4:_(p0), %37:_ :: (store (s8) into %ir.x.addr + 1)
+  %34:_(s8) = G_LOAD_INDIR_IDX %4:_(p0), %38:_ :: (dereferenceable load (s8) from %ir.x.addr)
+  %36:_(s8) = G_LOAD_INDIR_IDX %4:_(p0), %37:_ :: (dereferenceable load (s8) from %ir.x.addr + 1)
+  %7:_(s1) = G_CMPZ %34:_(s8), %36:_(s8)
+  G_BRCOND_IMM %7:_(s1), %bb.3, 1
+  G_BR %bb.2
+
+bb.2.if.then:
+; predecessors: %bb.1
+  successors: %bb.4(0x80000000); %bb.4(100.00%)
+
+  %25:_(s8) = G_CONSTANT i8 0
+  G_STORE_INDIR_IDX %37:_(s8), %3:_(p0), %25:_ :: (store (s8) into %ir.retval)
+  %24:_(s8) = G_CONSTANT i8 1
+  G_STORE_INDIR_IDX %38:_(s8), %3:_(p0), %24:_ :: (store (s8) into %ir.retval + 1)
+  G_BR %bb.4
+
+bb.3.if.end:
+; predecessors: %bb.1
+  successors: %bb.4(0x80000000); %bb.4(100.00%)
+
+  %31:_(s8) = G_CONSTANT i8 0
+  G_STORE_INDIR_IDX %38:_(s8), %3:_(p0), %31:_ :: (store (s8) into %ir.retval)
+  %30:_(s8) = G_CONSTANT i8 1
+  G_STORE_INDIR_IDX %38:_(s8), %3:_(p0), %30:_ :: (store (s8) into %ir.retval + 1)
+
+bb.4.return:
+; predecessors: %bb.3, %bb.2
+
+  %19:_(s8) = G_CONSTANT i8 0
+  %14:_(s8) = G_LOAD_INDIR_IDX %3:_(p0), %19:_ :: (dereferenceable load (s8) from %ir.retval)
+  %18:_(s8) = G_CONSTANT i8 1
+  %17:_(s8) = G_LOAD_INDIR_IDX %3:_(p0), %18:_ :: (dereferenceable load (s8) from %ir.retval + 1)
+  $a = COPY %14:_(s8)
+  $x = COPY %17:_(s8)
+  RTS implicit $a, implicit $x
+
+# End machine code for function f.
+

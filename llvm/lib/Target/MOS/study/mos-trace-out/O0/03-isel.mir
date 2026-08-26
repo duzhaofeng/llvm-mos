@@ -1,0 +1,229 @@
+--- |
+  ; ModuleID = 'mos-trace-out/O0/00-input.ll'
+  source_filename = "test.c"
+  target datalayout = "e-m:e-p:16:8-p1:8:8-i16:8-i32:8-i64:8-f32:8-f64:8-a:8-Fi8-n8"
+  target triple = "mos"
+  
+  ; Function Attrs: noinline norecurse nounwind optnone
+  define dso_local i16 @f(i16 noundef %x) #0 {
+  entry:
+    %retval = alloca i16, align 1
+    %x.addr = alloca i16, align 1
+    store i16 %x, ptr %x.addr, align 1
+    %0 = load i16, ptr %x.addr, align 1
+    %tobool = icmp ne i16 %0, 0
+    br i1 %tobool, label %if.then, label %if.end
+  
+  if.then:                                          ; preds = %entry
+    store i16 1, ptr %retval, align 1
+    br label %return
+  
+  if.end:                                           ; preds = %entry
+    store i16 0, ptr %retval, align 1
+    br label %return
+  
+  return:                                           ; preds = %if.end, %if.then
+    %1 = load i16, ptr %retval, align 1
+    ret i16 %1
+  }
+  
+  attributes #0 = { noinline norecurse nounwind optnone "frame-pointer"="all" "no-trapping-math"="true" "nonreentrant" "stack-protector-buffer-size"="8" }
+  
+  !llvm.module.flags = !{!0, !1}
+  !llvm.ident = !{!2}
+  
+  !0 = !{i32 1, !"wchar_size", i32 4}
+  !1 = !{i32 7, !"frame-pointer", i32 2}
+  !2 = !{!"clang version 23.0.0git (https://github.com/duzhaofeng/llvm-mos.git 751cafccae5b6d6f1300760fa5dfb4f1699bf65d)"}
+
+...
+---
+name:            f
+alignment:       1
+exposesReturnsTwice: false
+legalized:       true
+regBankSelected: true
+selected:        true
+failedISel:      false
+tracksRegLiveness: true
+hasWinCFI:       false
+noPhis:          false
+isSSA:           true
+noVRegs:         false
+hasFakeUses:     false
+callsEHReturn:   false
+callsUnwindInit: false
+hasEHCatchret:   false
+hasEHScopes:     false
+hasEHFunclets:   false
+isOutlined:      false
+debugInstrRef:   false
+failsVerification: false
+tracksDebugUserValues: false
+registers:
+  - { id: 0, class: _, preferred-register: '', flags: [  ] }
+  - { id: 1, class: ac, preferred-register: '', flags: [  ] }
+  - { id: 2, class: ac, preferred-register: '', flags: [  ] }
+  - { id: 3, class: any, preferred-register: '', flags: [  ] }
+  - { id: 4, class: imag16, preferred-register: '', flags: [  ] }
+  - { id: 5, class: _, preferred-register: '', flags: [  ] }
+  - { id: 6, class: _, preferred-register: '', flags: [  ] }
+  - { id: 7, class: any, preferred-register: '', flags: [  ] }
+  - { id: 8, class: _, preferred-register: '', flags: [  ] }
+  - { id: 9, class: _, preferred-register: '', flags: [  ] }
+  - { id: 10, class: _, preferred-register: '', flags: [  ] }
+  - { id: 11, class: _, preferred-register: '', flags: [  ] }
+  - { id: 12, class: _, preferred-register: '', flags: [  ] }
+  - { id: 13, class: _, preferred-register: '', flags: [  ] }
+  - { id: 14, class: ac, preferred-register: '', flags: [  ] }
+  - { id: 15, class: _, preferred-register: '', flags: [  ] }
+  - { id: 16, class: _, preferred-register: '', flags: [  ] }
+  - { id: 17, class: ac, preferred-register: '', flags: [  ] }
+  - { id: 18, class: yc, preferred-register: '', flags: [  ] }
+  - { id: 19, class: yc, preferred-register: '', flags: [  ] }
+  - { id: 20, class: _, preferred-register: '', flags: [  ] }
+  - { id: 21, class: _, preferred-register: '', flags: [  ] }
+  - { id: 22, class: _, preferred-register: '', flags: [  ] }
+  - { id: 23, class: _, preferred-register: '', flags: [  ] }
+  - { id: 24, class: yc, preferred-register: '', flags: [  ] }
+  - { id: 25, class: yc, preferred-register: '', flags: [  ] }
+  - { id: 26, class: _, preferred-register: '', flags: [  ] }
+  - { id: 27, class: _, preferred-register: '', flags: [  ] }
+  - { id: 28, class: _, preferred-register: '', flags: [  ] }
+  - { id: 29, class: _, preferred-register: '', flags: [  ] }
+  - { id: 30, class: yc, preferred-register: '', flags: [  ] }
+  - { id: 31, class: yc, preferred-register: '', flags: [  ] }
+  - { id: 32, class: _, preferred-register: '', flags: [  ] }
+  - { id: 33, class: _, preferred-register: '', flags: [  ] }
+  - { id: 34, class: ac, preferred-register: '', flags: [  ] }
+  - { id: 35, class: _, preferred-register: '', flags: [  ] }
+  - { id: 36, class: ac, preferred-register: '', flags: [  ] }
+  - { id: 37, class: yc, preferred-register: '', flags: [  ] }
+  - { id: 38, class: yc, preferred-register: '', flags: [  ] }
+  - { id: 39, class: _, preferred-register: '', flags: [  ] }
+  - { id: 40, class: _, preferred-register: '', flags: [  ] }
+  - { id: 41, class: _, preferred-register: '', flags: [  ] }
+  - { id: 42, class: imag16, preferred-register: '', flags: [  ] }
+  - { id: 43, class: imag16, preferred-register: '', flags: [  ] }
+  - { id: 44, class: imag16, preferred-register: '', flags: [  ] }
+  - { id: 45, class: ac, preferred-register: '', flags: [  ] }
+  - { id: 46, class: ac, preferred-register: '', flags: [  ] }
+  - { id: 47, class: ac, preferred-register: '', flags: [  ] }
+  - { id: 48, class: anyi8, preferred-register: '', flags: [  ] }
+  - { id: 49, class: cc, preferred-register: '', flags: [  ] }
+  - { id: 50, class: vc, preferred-register: '', flags: [  ] }
+  - { id: 51, class: anyi8, preferred-register: '', flags: [  ] }
+  - { id: 52, class: cc, preferred-register: '', flags: [  ] }
+  - { id: 53, class: vc, preferred-register: '', flags: [  ] }
+  - { id: 54, class: anyi8, preferred-register: '', flags: [  ] }
+  - { id: 55, class: cc, preferred-register: '', flags: [  ] }
+  - { id: 56, class: vc, preferred-register: '', flags: [  ] }
+  - { id: 57, class: anyi8, preferred-register: '', flags: [  ] }
+  - { id: 58, class: cc, preferred-register: '', flags: [  ] }
+  - { id: 59, class: vc, preferred-register: '', flags: [  ] }
+  - { id: 60, class: anyi8, preferred-register: '', flags: [  ] }
+  - { id: 61, class: cc, preferred-register: '', flags: [  ] }
+  - { id: 62, class: vc, preferred-register: '', flags: [  ] }
+  - { id: 63, class: anyi8, preferred-register: '', flags: [  ] }
+  - { id: 64, class: cc, preferred-register: '', flags: [  ] }
+  - { id: 65, class: vc, preferred-register: '', flags: [  ] }
+  - { id: 66, class: anyi8, preferred-register: '', flags: [  ] }
+  - { id: 67, class: cc, preferred-register: '', flags: [  ] }
+  - { id: 68, class: vc, preferred-register: '', flags: [  ] }
+  - { id: 69, class: anyi8, preferred-register: '', flags: [  ] }
+  - { id: 70, class: cc, preferred-register: '', flags: [  ] }
+  - { id: 71, class: vc, preferred-register: '', flags: [  ] }
+liveins:         []
+frameInfo:
+  isFrameAddressTaken: false
+  isReturnAddressTaken: false
+  hasStackMap:     false
+  hasPatchPoint:   false
+  stackSize:       0
+  offsetAdjustment: 0
+  maxAlignment:    1
+  adjustsStack:    false
+  hasCalls:        false
+  stackProtector:  ''
+  functionContext: ''
+  maxCallFrameSize: 4294967295
+  cvBytesOfCalleeSavedRegisters: 0
+  hasOpaqueSPAdjustment: false
+  hasVAStart:      false
+  hasMustTailInVarArgFunc: false
+  hasTailCall:     false
+  isCalleeSavedInfoValid: false
+  localFrameSize:  0
+  savePoint:       ''
+  restorePoint:    ''
+fixedStack:      []
+stack:
+  - { id: 0, name: retval, type: default, offset: 0, size: 2, alignment: 1, 
+      stack-id: default, callee-saved-register: '', callee-saved-restored: true, 
+      debug-info-variable: '', debug-info-expression: '', debug-info-location: '' }
+  - { id: 1, name: x.addr, type: default, offset: 0, size: 2, alignment: 1, 
+      stack-id: default, callee-saved-register: '', callee-saved-restored: true, 
+      debug-info-variable: '', debug-info-expression: '', debug-info-location: '' }
+entry_values:    []
+callSites:       []
+debugValueSubstitutions: []
+constants:       []
+machineFunctionInfo: {}
+body:             |
+  bb.1.entry:
+    successors: %bb.2(0x40000000), %bb.3(0x40000000)
+    liveins: $a, $x
+  
+    %1:ac = COPY $a
+    %2:ac = COPY $x
+    %66:anyi8, %67:cc, %68:vc = AddrLostk %stack.1.x.addr, 0
+    %69:anyi8, %70:cc, %71:vc = AddrHistk %stack.1.x.addr, 0, %67
+    %4:imag16 = REG_SEQUENCE %66, %subreg.sublo, %69, %subreg.subhi
+    %38:yc = LDImm 0
+    STIndirIdx %1, %4, %38 :: (store (s8) into %ir.x.addr)
+    %37:yc = LDImm 1
+    STIndirIdx %2, %4, %37 :: (store (s8) into %ir.x.addr + 1)
+    %34:ac = LDIndirIdx %4, %38 :: (dereferenceable load (s8) from %ir.x.addr)
+    %36:ac = LDIndirIdx %4, %37 :: (dereferenceable load (s8) from %ir.x.addr + 1)
+    CmpBrZeroMultiByte %bb.3, 1, %34, %36, implicit-def $c
+    JMP %bb.2
+  
+  bb.2.if.then:
+    successors: %bb.4(0x80000000)
+  
+    %25:yc = LDImm 0
+    %54:anyi8, %55:cc, %56:vc = AddrLostk %stack.0.retval, 0
+    %57:anyi8, %58:cc, %59:vc = AddrHistk %stack.0.retval, 0, %55
+    %43:imag16 = REG_SEQUENCE %54, %subreg.sublo, %57, %subreg.subhi
+    %45:ac = LDImm 1
+    STIndirIdx %45, %43, %25 :: (store (s8) into %ir.retval)
+    %24:yc = LDImm 1
+    %47:ac = LDImm 0
+    STIndirIdx %47, %43, %24 :: (store (s8) into %ir.retval + 1)
+    JMP %bb.4
+  
+  bb.3.if.end:
+    successors: %bb.4(0x80000000)
+  
+    %31:yc = LDImm 0
+    %60:anyi8, %61:cc, %62:vc = AddrLostk %stack.0.retval, 0
+    %63:anyi8, %64:cc, %65:vc = AddrHistk %stack.0.retval, 0, %61
+    %44:imag16 = REG_SEQUENCE %60, %subreg.sublo, %63, %subreg.subhi
+    %46:ac = LDImm 0
+    STIndirIdx %46, %44, %31 :: (store (s8) into %ir.retval)
+    %30:yc = LDImm 1
+    STIndirIdx %46, %44, %30 :: (store (s8) into %ir.retval + 1)
+  
+  bb.4.return:
+    %19:yc = LDImm 0
+    %48:anyi8, %49:cc, %50:vc = AddrLostk %stack.0.retval, 0
+    %51:anyi8, %52:cc, %53:vc = AddrHistk %stack.0.retval, 0, %49
+    %42:imag16 = REG_SEQUENCE %48, %subreg.sublo, %51, %subreg.subhi
+    %14:ac = LDIndirIdx %42, %19 :: (dereferenceable load (s8) from %ir.retval)
+    %18:yc = LDImm 1
+    %17:ac = LDIndirIdx %42, %18 :: (dereferenceable load (s8) from %ir.retval + 1)
+    $a = COPY %14
+    $x = COPY %17
+    RTS implicit $a, implicit $x
+
+...
