@@ -47,25 +47,19 @@ let SubRegIndices = [sub_lo, sub_hi], CoveredBySubRegs = 1 in {
   def DPTR51 : MCS51Reg<0x82, "dptr", [DPL51, DPH51]>, DwarfRegNum<[130]>;
 }
 
-def RB0 : MCS51Reg<0x00, "rb0", [], ["r0"]>, DwarfRegNum<[0]>;
-def RB1 : MCS51Reg<0x01, "rb1", [], ["r1"]>, DwarfRegNum<[1]>;
-def RB2 : MCS51Reg<0x02, "rb2", [], ["r2"]>, DwarfRegNum<[2]>;
-def RB3 : MCS51Reg<0x03, "rb3", [], ["r3"]>, DwarfRegNum<[3]>;
-def RB4 : MCS51Reg<0x04, "rb4", [], ["r4"]>, DwarfRegNum<[4]>;
-def RB5 : MCS51Reg<0x05, "rb5", [], ["r5"]>, DwarfRegNum<[5]>;
-def RB6 : MCS51Reg<0x06, "rb6", [], ["r6"]>, DwarfRegNum<[6]>;
-def RB7 : MCS51Reg<0x07, "rb7", [], ["r7"]>, DwarfRegNum<[7]>;
-
 def MCS51_ACC : RegisterClass<"MCS51", [i8], 8, (add ACC)>;
 def MCS51_B : RegisterClass<"MCS51", [i8], 8, (add BREG)>;
 def MCS51_PSW : RegisterClass<"MCS51", [i8], 8, (add PSW51)>;
-def MCS51_RBANK : RegisterClass<"MCS51", [i8], 8,
-                                (add RB0, RB1, RB2, RB3, RB4, RB5, RB6, RB7)>;
 def MCS51_DPTR : RegisterClass<"MCS51", [i16], 8, (add DPTR51)>;
 
 //===----------------------------------------------------------------------===//
-//  8-bit general purpose registers
+//  Working registers R0..R7
 //===----------------------------------------------------------------------===//
+// These are the 8051 working registers (current register bank). They serve
+// double duty as AVR general-purpose registers R0..R7 for the legacy
+// AVR-derived register classes (GPR8, GPR8lo, ...) below, and as the native
+// 8051 working-register operands via the GPR8rn / GPR8ri classes. When the
+// AVR-derived classes are removed, these become the sole R0..R7 definitions.
 
 def R0 : MCS51Reg<0, "r0">, DwarfRegNum<[0]>;
 def R1 : MCS51Reg<1, "r1">, DwarfRegNum<[1]>;
@@ -75,6 +69,15 @@ def R4 : MCS51Reg<4, "r4">, DwarfRegNum<[4]>;
 def R5 : MCS51Reg<5, "r5">, DwarfRegNum<[5]>;
 def R6 : MCS51Reg<6, "r6">, DwarfRegNum<[6]>;
 def R7 : MCS51Reg<7, "r7">, DwarfRegNum<[7]>;
+
+//===----------------------------------------------------------------------===//
+//  AVR-derived registers (to be removed)
+//===----------------------------------------------------------------------===//
+// R8..R31, the X/Y/Z pointer pairs, SP, and all DREG pairs below exist only to
+// support the legacy AVR-derived instruction set and CodeGen path. They have
+// no meaning in the 8051 architecture and will be deleted once the native
+// 8051 CodeGen replaces the AVR one.
+
 def R8 : MCS51Reg<8, "r8">, DwarfRegNum<[8]>;
 def R9 : MCS51Reg<9, "r9">, DwarfRegNum<[9]>;
 def R10 : MCS51Reg<10, "r10">, DwarfRegNum<[10]>;
@@ -141,10 +144,33 @@ let SubRegIndices = [sub_lo, sub_hi], CoveredBySubRegs = 1 in {
 }
 
 //===----------------------------------------------------------------------===//
+//  Native 8051 working-register pairs
+//===----------------------------------------------------------------------===//
+// Little-endian i16 views of the 8051 working registers R0..R7: R7:R6 (first
+// i16), R5:R4, R3:R2, R1:R0, with the lower-numbered register holding the
+// high byte (SDCC/Keil convention). These are the argument/return registers
+// of the calling convention defined in MCS51CallingConv.td.
+//
+// For Phase 1 these are defined without sub-registers, because the legacy
+// AVR-derived DREG pairs (R7R6, R5R4, R3R2, R1R0) above occupy the same
+// sub-register sets in the opposite byte order, and TableGen cannot infer
+// both orderings at once. Once the AVR-derived pairs are deleted in Phase 2,
+// these definitions gain `sub_lo`/`sub_hi` sub-registers and
+// CoveredBySubRegs=1 to become usable as ordinary i16 registers.
+def R6R7 : MCS51Reg<6, "r6:r7">;
+def R4R5 : MCS51Reg<4, "r4:r5">;
+def R2R3 : MCS51Reg<2, "r2:r3">;
+def R0R1 : MCS51Reg<0, "r0:r1">;
+
+//===----------------------------------------------------------------------===//
 // Register Classes
 //===----------------------------------------------------------------------===//
+// AVR-derived classes (GPR8, GPR8lo, LD8, LD8lo, DREGS, ..., ZREG, CCR) are
+// only used by the legacy AVR-derived instruction set and CodeGen path, and
+// will be removed. The native 8051 classes are GPR8rn and GPR8ri below, plus
+// MCS51_ACC / MCS51_B / MCS51_PSW / MCS51_DPTR above.
 
-// Main 8-bit register class.
+// Main 8-bit register class (AVR-derived, to be removed).
 def GPR8 : RegisterClass<"MCS51", [i8], 8,
                          (
                              // Return value and argument registers.

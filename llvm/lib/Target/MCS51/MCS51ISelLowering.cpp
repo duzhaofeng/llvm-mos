@@ -1672,8 +1672,16 @@ bool MCS51TargetLowering::CanLowerReturn(
     return CCInfo.CheckReturn(Outs, RetCC_MCS51_BUILTIN);
   }
 
-  unsigned TotalBytes = getTotalArgumentsSizeInBytes(Outs);
-  return TotalBytes <= (unsigned)(Subtarget.hasTinyEncoding() ? 4 : 8);
+  // The AVR-derived (tiny) path keeps its fixed byte budget.
+  if (Subtarget.hasTinyEncoding())
+    return getTotalArgumentsSizeInBytes(Outs) <= 4;
+
+  // Validate the return value against the native 8051 return convention
+  // (RetCC_MCS51 in MCS51CallingConv.td), which places all results within the
+  // R0..R7 working-register window (i.e. at most 8 bytes in i8/i16 units).
+  SmallVector<CCValAssign, 16> RVLocs;
+  CCState CCInfo(CallConv, isVarArg, MF, RVLocs, Context);
+  return CCInfo.CheckReturn(Outs, RetCC_MCS51);
 }
 
 SDValue
